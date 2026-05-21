@@ -1,0 +1,3 @@
+.claude/agent-memory
+# Symlinks to sibling repos (local only)
+/secrets
