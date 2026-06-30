@@ -1,223 +1,130 @@
-# dalgo-core
+# dalgo-consulting
 
-Central repo for AI-assisted development workflows, specs, plans, and Claude Code configuration for the Dalgo platform.
+AI-assisted consulting workflow for building dbt data models that transform raw NGO program data into M&E metrics and dashboards. Each engagement moves through four phases: **Discovery → Data Exploration → Framework → Model Development**.
 
 ## Repo Structure
 
 ```
-dalgo-core/
+dalgo-consulting/
 ├── .claude/
 │   ├── agents/              # Specialized AI agents (auto-invoked by context)
 │   ├── commands/
-│   │   ├── product/         # PM commands
-│   │   └── engineering/     # Engineering commands
-│   └── skills/              # Evaluation lenses / thinking frameworks
-├── prototypes/
-│   └── {feature-name}/
-│       └── brief.md             # PM's prototype brief (spike)
-├── workdocs/
-│   └── {feature-name}/
-│       ├── spec.md              # PM's original spec (full vision)
-│       ├── v1/
-│       │   ├── spec.md          # Engineering's scoped iteration
-│       │   ├── research.md      # Codebase & external research
-│       │   ├── plan.md          # Implementation plan (HLD, LLD, security, milestones)
-│       │   └── tasks.md         # Execution progress checkpoint
-│       └── v2/
-│           └── ...              # Next iteration
-├── DDP_backend -> ../DDP_backend   (symlink, gitignored)
-└── webapp_v2 -> ../webapp_v2       (symlink, gitignored)
+│   │   └── consulting/      # Phase-specific consulting commands
+│   └── skills/              # Reusable skills (read_requirements, tal-lens, etc.)
+├── secrets/
+│   └── my_service_key.json  # Google service account key (gitignored)
+└── workdocs/
+    └── consulting/
+        ├── process.md                  # Full process reference
+        ├── artifact-design-plan.md     # Artifact schema designs
+        ├── scripts/                    # Python automation scripts
+        │   ├── read_requirements.py    # Reads Requirements Sheet → stdout
+        │   └── create_sheet.py         # Creates Google Sheet templates
+        └── {engagement}/
+            ├── discovery/
+            │   └── me_goals.md         # Shared context for ALL downstream phases
+            ├── data_exploration/
+            │   ├── sources.yml         # Raw table profiles + LLM notes
+            │   └── er_diagram.md       # Entity-relationship diagram
+            └── models/                 # Or inside the client's dbt repo
+                ├── staging/
+                ├── intermediate/
+                └── marts/
+
+Google Sheets (linked from workdocs, not stored as files):
+├── Requirements Sheet      ← 4-tab workbook: Instructions / Engagement Context / Data Sources / Metrics
+├── KPI Framework Sheet     ← consultant-built technical spec
+└── Data Dictionary Sheet   ← generated at engagement close
 ```
 
 ## Three Types of Tools
 
 | Type | Location | Purpose | How to Use |
 |------|----------|---------|------------|
-| **Commands** | `.claude/commands/{product,engineering}/` | Step-by-step workflows with inputs and outputs | `/product/command` or `/engineering/command` |
+| **Commands** | `.claude/commands/consulting/` | Phase-specific workflows with structured inputs and outputs | `/discover`, `/explore_data`, etc. |
 | **Agents** | `.claude/agents/` | Specialized personas invoked by context | Claude picks the right agent automatically |
-| **Skills** | `.claude/skills/` | Evaluation lenses — shift how Claude looks at a problem | Invoke by name (e.g. `/design-review`) |
+| **Skills** | `.claude/skills/` | Reusable sub-routines called by commands or directly | Invoke by name (e.g. `/read_requirements`, `/tal-lens`) |
 
 ---
 
-## Feature Lifecycle
+## Consulting Workflow
 
-### Spike Track (PM or Anyone)
+### New Engagement
 
-Quick validation with NGO partners before committing engineering time. PM owns this end-to-end.
+Full four-phase process for a new client or program.
 
-| | |
-|---|---|
-| **Run** | `/product/prototype "feature idea"` or `/product/prototype path/to/notes.md` |
-| **Saves to** | `prototypes/{feature-name}/brief.md` |
-| **Then** | Optionally builds prototype code in a separate branch |
-| **Review** | Show to the team before showing to users |
-| **After testing** | Validated → `/product/write-spec` to promote. Didn't work → archive & move on. |
+```
+Phase 1: Discovery
+  /discover               ← interactive wizard: collects engagement details, creates folders,
+                             reads Requirements Sheet → generates me_goals.md
 
-<img width="483" height="88" alt="Screenshot 2026-04-21 at 12 53 17 PM" src="https://github.com/user-attachments/assets/1a3135cf-bf03-4b1b-8a07-4ed7d3024d32" />
+Phase 2: Data Exploration
+  /explore_data           ← reads me_goals.md + sources.yml; profiles raw tables; skips PII
 
-```mermaid
-flowchart TD
-    A["Idea or NGO request"] --> B["Prototype
-    Run /product/prototype"]
-    B --> |"brief.md"| C["Build"]
-    C --> R{"Show to the team"}
-    R --> |"Approved"| F["Test with NGO"]
-    R --> C
-    R --> X["Reject"]
-    F --> G{Validated?}
-    G --> |Yes| H["Write spec
-    Run /product/write-spec"]
-    G --> |"Maybe / No"| I["Archive"]
+Phase 3: Framework
+  /curate_metrics         ← reads me_goals.md + sources.yml → metrics.md
+  /build_kpi_sheet        ← builds KPI Framework Sheet from me_goals.md + sources.yml
+  /generate_er_diagram    ← designs entity model → er_diagram.md
 
-    style A fill:#f3f4f6,stroke:#6b7280,color:#000
-    style B fill:#fff,stroke:#6b7280,color:#000
-    style C fill:#fff,stroke:#6b7280,color:#000
-    style R fill:#fff,stroke:#6b7280,color:#000
-    style F fill:#fff,stroke:#6b7280,color:#000
-    style G fill:#fff,stroke:#6b7280,color:#000
-    style H fill:#fff,stroke:#6b7280,color:#000
-    style X fill:#fef3c7,stroke:#f59e0b,color:#000
-    style I fill:#fef3c7,stroke:#f59e0b,color:#000
+Phase 4: Model Development
+  /write_staging          ← stg_* models: rename, cast, deduplicate, null-handling
+  /write_intermediate     ← int_* models: joins, cohort construction, derived fields
+  /write_mart             ← fct_*/dim_* models: metric calculations per KPI Framework
+  /generate_data_dict     ← produces Data Dictionary Sheet for client handoff
+
+Finalization (mandatory)
+  /finalize               ← SQLFluff lint, dbt-osmosis docs, open GitHub PR to main
 ```
 
-### Engineering Track
+### Modification Track
 
-Production-quality implementation for confirmed features. Engineering owns this. All artifacts in `workdocs/`.
+Lightweight path for existing clients adding or changing metrics.
 
-```mermaid
-flowchart TD
-    A["Write spec
-    Run /product/write-spec"] --> |"spec.md"| DR["Design/UX"]
-    DR --> |"spec.md + designs"| C["Scope version"]
-    DR --> A
-    C --> |"v1/spec.md"| D["Plan & iterate
-    Run /engineering/plan-feature"]
-    D --> |"plan.md"| F["Execute plan
-    Run /engineering/execute-plan"]
-    F --> DR2["Design review"]
-    DR2 --> G["Validate spec
-    Run /engineering/validate-spec"]
-    DR2 --> F
-    G --> H["Review PR
-    Run /engineering/review-pr"]
-    H --> I["Merge + Deploy"]
-    I --> J{Next?}
-    J --> |Bug| K["Debug issue
-    Run /engineering/debug-issue"]
-    J --> |v2| C
-
-    style A fill:#fff,stroke:#6b7280,color:#000
-    style DR fill:#fff,stroke:#6b7280,color:#000
-    style C fill:#fff,stroke:#6b7280,color:#000
-    style D fill:#fff,stroke:#6b7280,color:#000
-    style F fill:#fff,stroke:#6b7280,color:#000
-    style DR2 fill:#fff,stroke:#6b7280,color:#000
-    style G fill:#fff,stroke:#6b7280,color:#000
-    style H fill:#fff,stroke:#6b7280,color:#000
-    style I fill:#d1fae5,stroke:#10b981,color:#000
-    style J fill:#fff,stroke:#6b7280,color:#000
-    style K fill:#fff,stroke:#6b7280,color:#000
+```
+  /build_kpi_sheet        ← update existing KPI Framework Sheet rows
+  /explore_data           ← only if a new data source was added
+  /write_staging          ← only affected models
+  /write_intermediate     ← only affected models
+  /write_mart             ← only affected models
+  /generate_data_dict     ← update Data Dictionary Sheet
+  /finalize               ← same finalization step as new engagement
 ```
 
-### When to use which
+### When to Use Which Track
 
-| | Spike | Engineering |
+| | New Engagement | Modification Track |
 |---|---|---|
-| **Confidence** | "I think this might work" | "We know we need this" |
-| **Goal** | Validate with an NGO user | Ship to production |
-| **Time** | Hours | Days |
-| **Workspace** | `prototypes/` | `workdocs/` |
-| **Command** | `/product/prototype` | `/product/write-spec` → `/engineering/*` |
+| **Trigger** | New client or new program | Change request on a live client |
+| **Scope** | Full four-phase process | Affected layers only |
+| **KPI Framework** | Built from scratch after data exploration | Existing sheet — add/revise rows |
+| **dbt models** | All layers written fresh | Only impacted models rewritten |
+| **Data Dictionary** | Generated at close | Updated in-place |
 
 ---
 
 ## Commands Reference
 
-### Product Commands
-
-#### `/product/prototype`
-Quick spike — validate an idea with NGO partners before committing to a full spec.
-
-```
-/product/prototype "let users bookmark their favorite dashboard charts"
-```
-**Output:** `prototypes/{feature-name}/brief.md` (1-page brief with problem, scope, quick plan)
-**Optionally:** builds the prototype code with `# PROTOTYPE` markers
-**Next step:** Test with NGO → if validated, `/product/write-spec "{feature name}"`
-
-#### `/product/write-spec`
-Two modes in one command:
-
-**Mode A — New spec** (from an idea):
-```
-/product/write-spec "scheduled report emails for dashboard owners"
-```
-**Output:** `workdocs/{feature-name}/spec.md` (full vision)
-
-**Mode B — Scope a version** (from an existing spec):
-```
-/product/write-spec workdocs/scheduled-reports
-```
-**Output:** `workdocs/{feature-name}/v1/spec.md` (or v2, v3, etc.)
-**Next step:** `/engineering/plan-feature workdocs/{feature-name}/v1/spec.md`
-
-### Engineering Commands
-
-#### `/engineering/plan-feature`
-Generate an implementation plan with HLD, LLD, security review, and milestones.
-
-```
-/engineering/plan-feature workdocs/scheduled-reports/v1/spec.md
-```
-**Output:** `workdocs/{feature-name}/v1/plan.md` + `research.md`
-
-The plan is a **draft** — engineers iterate on it through conversation. Claude updates `plan.md` in place.
-
-#### `/engineering/execute-plan`
-Implement the feature following the plan, with checkpointing.
-
-```
-/engineering/execute-plan workdocs/scheduled-reports/v1/plan.md
-```
-**Creates:** `workdocs/{feature-name}/v1/tasks.md` for progress tracking
-**Next step:** `/engineering/validate-spec`
-
-#### `/engineering/debug-issue`
-Diagnose a bug from a Sentry URL, error message, or behavior description.
-
-```
-/engineering/debug-issue https://sentry.io/issues/DALGO-123/
-/engineering/debug-issue "500 error on /api/v1/organizations/"
-```
-
-#### `/engineering/review-pr`
-Structured code review — checks service-specific conventions, security, testing, breaking changes.
-
-```
-/engineering/review-pr 142
-/engineering/review-pr https://github.com/DalgoT4D/DDP_backend/pull/142
-```
-Does NOT auto-post to GitHub — outputs the review for you to use.
-
-#### `/engineering/validate-spec`
-Validates the implementation against the spec. Checks that all spec requirements are met, runs lint, tests, and migration checks. Read-only.
-
-```
-/engineering/validate-spec
-```
+| Command | Phase | Input | Output |
+|---------|-------|-------|--------|
+| `/discover` | Discovery | Interactive — Requirements Sheet URL, dbt repo path, engagement name | Folder structure + `me_goals.md` |
+| `/explore_data` | Data Exploration | `me_goals.md`, `sources.yml` (PII columns pre-marked by consultant) | `sources.yml` enriched with column profiles and LLM notes |
+| `/curate_metrics` | Framework | `me_goals.md`, `sources.yml` | `metrics.md` |
+| `/build_kpi_sheet` | Framework | `me_goals.md`, `sources.yml` | KPI Framework Sheet (Google Sheet) |
+| `/generate_er_diagram` | Framework | `me_goals.md`, KPI Framework Sheet, `sources.yml` | `er_diagram.md` |
+| `/write_staging` | Model Dev | KPI Framework, `sources.yml` | `stg_*.sql` models |
+| `/write_intermediate` | Model Dev | KPI Framework, staging models | `int_*.sql` models |
+| `/write_mart` | Model Dev | KPI Framework, intermediate models | `fct_*.sql`, `dim_*.sql` models |
+| `/generate_data_dict` | Model Dev | Final dbt models, `schema.yml` | Data Dictionary Sheet (Google Sheet) |
+| `/finalize` | Finalization | Full dbt model set | SQLFluff clean, dbt-osmosis docs, GitHub PR |
 
 ---
 
 ## Agents
 
-Agents are specialized personas that Claude invokes automatically when the context matches. Agents use skills as reference material for their decisions.
-
-| Agent | What It Does | Skills Used |
-|-------|-------------|-------------|
-| **debugger** | Diagnoses bugs across the full stack — Django backend, Next.js frontend, or cross-cutting. | `backend-architecture`, `frontend-architecture` |
-| **senior-product-manager** | Product strategy and feature specs. Prioritization, roadmap, build-vs-buy, spec writing. | None — uses its own evaluation framework |
-| **ux-design-expert** | UI/UX design using Dalgo's design system (Shadcn, teal brand, Tailwind). | `design-review` (patterns.md for design system reference) |
-| **ngo-data-platform-consultant** | Evaluates features as "Priya" — a non-technical NGO program manager. | None — uses its own NGO persona framework |
+| Agent | What It Does |
+|-------|-------------|
+| **ngo-data-platform-consultant** | Evaluates outputs as "Priya" — a non-technical NGO program manager. Catches jargon, complexity, and anything a field coordinator couldn't act on. |
+| **dbt-engineer** | Writes and reviews dbt SQL models across staging, intermediate, and mart layers. Follows the medallion architecture and KPI Framework contract. |
 
 ---
 
@@ -225,52 +132,74 @@ Agents are specialized personas that Claude invokes automatically when the conte
 
 | Skill | What It Does |
 |-------|-------------|
-| **design-review** | Combined UX expert + NGO user evaluation of UI components or screenshots. |
-| **tal-lens** | Tal Raviv's technology philosophy — demystify, build first, anti-hype, clarity over cleverness. |
+| **read_requirements** | Reads all tabs from the Requirements Sheet via Google Sheets API and generates `me_goals.md`. Called automatically by `/discover`; also usable standalone to refresh `me_goals.md` at any point mid-engagement. |
+| **tal-lens** | Tal Raviv's technology philosophy — demystify, build first, anti-hype, clarity over cleverness. Use when evaluating tooling choices or architecture decisions. |
 
 ---
 
 ## Common Workflows
 
-### Spike (idea to validation)
+### New Engagement (discovery to delivery)
+
 ```
-/product/prototype "feature idea"
-# test with NGO partner...
-# if validated:
-/product/write-spec "feature idea"
+# Phase 1 — Discovery
+/discover
+# (interactive — follow the prompts)
+
+# Phase 2 — Data Exploration
+/explore_data path/to/sources.yml
+
+# Phase 3 — Framework
+/curate_metrics
+/build_kpi_sheet
+/generate_er_diagram
+
+# Phase 4 — Model Development (iterate per layer)
+/write_staging
+# dbt run --select staging → verify → fix → re-run
+/write_intermediate
+# dbt run --select intermediate → verify → fix → re-run
+/write_mart
+# dbt run --select marts → compare to KPI Framework → fix → re-run
+/generate_data_dict
+
+# Finalization
+/finalize
 ```
 
-### New Feature (idea to merge)
+### Modification (change request on live client)
+
 ```
-/product/write-spec "feature idea"
-/product/write-spec workdocs/{name}
-/engineering/plan-feature workdocs/{name}/v1/spec.md
-# iterate on plan...
-/engineering/execute-plan workdocs/{name}/v1/plan.md
-/engineering/validate-spec
-/engineering/review-pr <pr-number>
+# Update KPI Framework Sheet manually or with /build_kpi_sheet
+# If new data source:
+/explore_data path/to/new_sources.yml
+
+# Rewrite only affected layers
+/write_staging   # if raw schema changed
+/write_intermediate
+/write_mart
+
+/generate_data_dict
+/finalize
 ```
 
-### Bug Fix
-```
-/engineering/debug-issue "error description or Sentry URL"
-# implement the fix
-/engineering/validate-spec
-```
+### Spot-Check During Model Dev
 
-### Design Feedback
 ```
-/design-review
-```
-
-### Next Iteration
-```
-/product/write-spec workdocs/{name}
-# creates v2/spec.md from remaining items in original spec
-/engineering/plan-feature workdocs/{name}/v2/spec.md
+# After each dbt run, verify:
+# - Row counts match source (staging)
+# - Join cardinalities correct, no fan-out (intermediate)
+# - Metric values match KPI Framework spot calculations (marts)
 ```
 
 ---
 
-## What's Intentionally NOT Included
+## Key Principles
 
+- **Requirements Sheet drives scope** — client fills it once; all changes route through an explicit KPI Framework update.
+- **KPI Framework is the technical contract** — no dbt model is written without a corresponding KPI row.
+- **Data exploration before framework authoring** — raw table shape is understood before the KPI Framework is built.
+- **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
+- **Finalization is mandatory** — SQLFluff + dbt-osmosis + GitHub PR before every delivery.
+- **Delivery is PR-based** — consulting changes ship on a dedicated branch, never direct-pushed to main.
+- **NGO data quality is often poor** — staging models must be defensive; document assumptions in `sources.yml` and `schema.yml`.
