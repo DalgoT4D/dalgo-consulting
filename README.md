@@ -23,7 +23,7 @@ dalgo-consulting/
             ├── discovery/
             │   └── me_goals.md         # Shared context for ALL downstream phases
             ├── data_exploration/
-            │   ├── sources.yml         # Optional working copy; /explore_data can also target a dbt repo source.yml directly
+            │   ├── sources.yml         # Optional working copy; /explore_data can also target one or more dbt repo source YAMLs directly
             │   └── er_diagram.md       # Entity-relationship diagram
             └── models/                 # Or inside the client's dbt repo
                 ├── staging/
@@ -58,8 +58,9 @@ Phase 1: Discovery
                              reads Requirements Sheet → generates me_goals.md
 
 Phase 2: Data Exploration
-  /explore_data           ← reads me_goals.md + a passed source.yml/sources.yml; profiles raw tables,
-                             infers likely PII, and rewrites the same YAML with enrichment
+  /explore_data           ← reads me_goals.md + one or more passed source.yml/sources.yml files;
+                             prompts for SSH tunnel port, respects pre-marked PII, infers additional
+                             likely PII, and rewrites the same YAML files with enrichment
 
 Phase 3: Framework
   /curate_metrics         ← reads me_goals.md + sources.yml → metrics.md
@@ -107,7 +108,7 @@ Lightweight path for existing clients adding or changing metrics.
 | Command | Phase | Input | Output |
 |---------|-------|-------|--------|
 | `/discover` | Discovery | Interactive — Requirements Sheet URL, dbt repo path, engagement name | Folder structure + `me_goals.md` |
-| `/explore_data` | Data Exploration | Path to `source.yml` / `sources.yml`; reads `me_goals.md` and dbt repo/profile context | Rewrites the same YAML with column profiles, inferred PII flags, and LLM notes |
+| `/explore_data` | Data Exploration | One or more paths to `source.yml` / `sources.yml`; reads `me_goals.md` and dbt repo/profile context | Rewrites the same YAML files with column profiles, explicit + inferred PII flags, and LLM notes |
 | `/curate_metrics` | Framework | `me_goals.md`, `sources.yml` | `metrics.md` |
 | `/build_kpi_sheet` | Framework | `me_goals.md`, `sources.yml` | KPI Framework Sheet (Google Sheet) |
 | `/generate_er_diagram` | Framework | `me_goals.md`, KPI Framework Sheet, `sources.yml` | `er_diagram.md` |
@@ -147,7 +148,7 @@ Lightweight path for existing clients adding or changing metrics.
 # (interactive — follow the prompts)
 
 # Phase 2 — Data Exploration
-/explore_data path/to/source.yml
+/explore_data path/to/source.yml path/to/other_source.yml
 
 # Phase 3 — Framework
 /curate_metrics
@@ -172,7 +173,7 @@ Lightweight path for existing clients adding or changing metrics.
 ```
 # Update KPI Framework Sheet manually or with /build_kpi_sheet
 # If new data source:
-/explore_data path/to/new_source.yml
+/explore_data path/to/new_source.yml path/to/other_new_source.yml
 
 # Rewrite only affected layers
 /write_staging   # if raw schema changed
@@ -200,7 +201,7 @@ Lightweight path for existing clients adding or changing metrics.
 - **KPI Framework is the technical contract** — no dbt model is written without a corresponding KPI row.
 - **Data exploration before framework authoring** — raw table shape is understood before the KPI Framework is built.
 - **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
-- **PII must not be exposed in artifacts** — `/explore_data` infers likely PII heuristically, marks it in the YAML, and never stores sample values for columns marked PII.
+- **PII must not be exposed in artifacts** — `/explore_data` respects consultant-marked PII, avoids raw-value inspection for those columns, may infer additional likely PII heuristically, and never stores sample values for columns marked PII.
 - **Finalization is mandatory** — SQLFluff + dbt-osmosis + GitHub PR before every delivery.
 - **Delivery is PR-based** — consulting changes ship on a dedicated branch, never direct-pushed to main.
 - **NGO data quality is often poor** — staging models must be defensive; document assumptions in `sources.yml` and `schema.yml`.

@@ -1,21 +1,21 @@
 # /explore_data — Raw Warehouse Exploration
 
-Profiles the raw tables listed in a passed `source.yml` or `sources.yml` file and enriches that same YAML in place.
+Profiles the raw tables listed across one or more passed `source.yml` or `sources.yml` files and enriches those same YAML files in place.
 Use this after `/discover`, once the raw data has been ingested and the consultant is ready to understand the real warehouse shape before KPI design.
 
-Treat the text after `/explore_data` as the candidate path to the YAML file.
+Treat the text after `/explore_data` as one or more candidate paths to YAML files.
 Run through each step in order. Do not skip validation. Stop immediately on blocking errors instead of guessing.
 
 ---
 
-## Step 0 — Resolve And Validate The Source YAML
+## Step 0 — Resolve And Validate The Source YAML Inputs
 
-If the user passed a path after `/explore_data`, treat that as `{sources_path}`.
+If the user passed one or more paths after `/explore_data`, treat them as `{sources_paths}`.
 
 If no path was provided, ask:
-> "What is the path to the `source.yml` or `sources.yml` file you want to enrich?"
+> "What are the paths to the `source.yml` / `sources.yml` files you want to enrich?"
 
-Validate:
+For every candidate file, validate:
 - The file exists on disk.
 - The filename may be `source.yml`, `sources.yml`, or any `.yml` / `.yaml` file.
 - The YAML parses successfully.
@@ -28,30 +28,52 @@ Allow these variations without failing:
 - extra dbt properties such as `meta`, `tags`, `tests`, `database`, `columns`
 - table entries with no `identifier` — default to the table `name` in memory
 - partial column entries that contain only `name` or `description`
+- existing column-level `pii` and `pii_reason` fields that were authored by the consultant
 
-If parsing fails or the structure is missing `sources`, stop and show the exact issue.
+If multiple files were provided:
+- remove exact duplicate paths
+- preserve the user-provided file order
+- stop if the files clearly belong to different dbt repos or different engagements and you cannot reconcile that automatically
+
+If parsing fails or a file structure is missing `sources`, stop and show the exact issue and the file path.
 Do not rewrite the file yet.
 
 Store:
-- `{sources_path}`
-- `{sources_yaml}`
+- `{sources_paths}`
+- `{sources_yamls}`
 
 ---
 
-## Step 1 — Resolve `me_goals.md`
+## Step 1 — Confirm SSH Tunnel Readiness
 
-Prefer deriving the engagement context automatically.
+Prompt the user before any warehouse work starts:
+> "Before `/explore_data` continues, make sure any required SSH tunnel is already running in another terminal tab. What local port is the tunnel using? Press Enter for `5432`, or type `none` if no tunnel is needed."
+
+If the user indicates the tunnel is not running yet:
+> "Start the tunnel in another tab, then type `done` to continue. If the tunnel uses a non-default local port, include that port as well."
+
+Store:
+- `{tunnel_port}` with default `5432`
+- or `{tunnel_port} = none`
+
+This prompt is only a reminder and port capture. Do not skip the later `dbt debug` check.
+
+---
+
+## Step 2 — Resolve `me_goals.md`
+
+Prefer deriving the engagement context automatically from all passed files.
 
 Try, in this order:
 
-1. **If `{sources_path}` is inside `workdocs/consulting/{engagement}/...`:**
-   - Derive `{engagement}` from the path.
+1. **If every path in `{sources_paths}` is inside the same `workdocs/consulting/{engagement}/...`:**
+   - Derive `{engagement}` from that shared path.
    - Set `{me_goals_path}` to:
      `workdocs/consulting/{engagement}/discovery/me_goals.md`
 
-2. **If `{sources_path}` is inside a dbt repo:**
-   - Walk upward from `{sources_path}` until you find a directory containing `dbt_project.yml`.
-   - Store that directory as `{candidate_dbt_repo}`.
+2. **If every path in `{sources_paths}` is inside the same dbt repo:**
+   - Walk upward from each path until you find a directory containing `dbt_project.yml`.
+   - If they all resolve to the same directory, store it as `{candidate_dbt_repo}`.
    - Search `workdocs/consulting/*/discovery/me_goals.md` for a footer line containing:
      `dbt repo: {candidate_dbt_repo}`
    - If exactly one file matches, use it as `{me_goals_path}`.
@@ -68,7 +90,7 @@ Store:
 
 ---
 
-## Step 2 — Resolve The dbt Repo
+## Step 3 — Resolve The dbt Repo
 
 Prefer the dbt repo path recorded by `/discover`.
 
@@ -84,13 +106,14 @@ Validate:
 - `{dbt_repo_path}/dbt_project.yml` exists
 
 If both `{candidate_dbt_repo}` and the path from `me_goals.md` exist but they do not match, stop and ask the user which one to trust.
+If any of the passed YAML paths fall outside `{dbt_repo_path}` and outside `workdocs/consulting/{engagement}/`, stop and ask the user to confirm the intended file set.
 
 Store:
 - `{dbt_repo_path}`
 
 ---
 
-## Step 3 — Resolve The Profile And Verify Connectivity
+## Step 4 — Resolve The Profile And Verify Connectivity
 
 Find the profile configuration in this order:
 
@@ -107,6 +130,11 @@ Read:
 
 If the profile uses environment variables, resolve them from the current shell environment before continuing.
 If required variables are missing, stop and list them explicitly.
+
+If the resolved warehouse host is local (`localhost`, `127.0.0.1`, or equivalent) and `{tunnel_port}` is not `none`:
+- compare the resolved profile port with `{tunnel_port}`
+- if they do not match, stop and show the mismatch clearly
+- tell the user to align the running tunnel and the dbt profile/env vars before re-running `/explore_data`
 
 Run:
 
@@ -134,15 +162,16 @@ Store:
 
 ---
 
-## Step 4 — Profile Each Source Table
+## Step 5 — Profile Each Source Table
 
-For each source in `{sources_yaml.sources}`:
-- Read the source-level `schema`
-- Respect an explicit `database` if present
+For each YAML file in `{sources_yamls}`:
+- iterate through each source in that file's `sources` collection
+- read the source-level `schema`
+- respect an explicit `database` if present
 
 For each table:
-- Use `identifier` when present; otherwise use `name`
-- Resolve the physical table as `{schema}.{identifier_or_name}`
+- use `identifier` when present; otherwise use `name`
+- resolve the physical table as `{schema}.{identifier_or_name}`
 
 Before profiling, confirm the table exists in the warehouse.
 If any listed table is missing, stop and report the missing table exactly.
@@ -172,12 +201,26 @@ Use warehouse inspection queries to understand:
 - whether there are obvious data quality issues such as blank strings, JSON blobs, repeated Airbyte metadata fields, mixed yes/no encodings, or duplicated records
 
 For sample inspection:
-- capture up to 5 distinct non-null sample values for non-PII columns only
+- capture up to 5 distinct non-null sample values for columns that are not marked PII
 - do not dump full rows unless needed to understand a table anomaly
+
+### Respect Existing PII Flags
+
+If an input YAML already marks a column as PII:
+- treat that mark as authoritative
+- preserve the existing `pii` value
+- preserve the existing `pii_reason` when present
+- do not query raw values from that column during analysis
+- do not run `SELECT DISTINCT column`, sample-value queries, or raw `LIMIT` inspection against that column
+- you may still compute aggregate-only statistics such as null rate, non-null count, cardinality, and duplicate counts
+
+If an input YAML already sets `pii` on a column, do not replace it heuristically.
+Only infer `pii` for columns where the input YAML did not already set that field.
 
 ### PII Inference Rules
 
 Infer `pii: true` heuristically from column names, existing descriptions, and limited pattern checks where needed.
+Only do this for columns that do not already have a user-authored `pii` value.
 
 Treat these as likely PII by default:
 - person names: `name`, `full_name`, `first_name`, `last_name`
@@ -193,7 +236,7 @@ Do **not** treat these as PII by default:
 - country
 - program/site/location codes that are not person-identifying
 
-For every column marked PII:
+For every column marked PII, whether explicit or inferred:
 - set `pii: true`
 - add a short `pii_reason`
 - do not store `sample_values`
@@ -213,9 +256,9 @@ Use these guidelines when generating table-level outputs:
 
 ---
 
-## Step 5 — Merge Enrichment Back Into The Same YAML
+## Step 6 — Merge Enrichment Back Into The Same YAML
 
-Rewrite `{sources_path}` in place.
+Rewrite every file in `{sources_paths}` in place.
 
 Merge rules:
 - Preserve all existing user-authored keys at root, source, table, and column level.
@@ -225,6 +268,7 @@ Merge rules:
 - If a warehouse column is missing from the YAML, add it in warehouse ordinal order.
 - If a previous run left generated fields, replace them with fresh values rather than duplicating them.
 - If a column is now marked `pii: true`, remove any previously stored `sample_values`.
+- If a column already had a user-authored `pii` or `pii_reason`, preserve that authored value and avoid replacing it with a heuristic one.
 
 Generated table-level fields:
 - `row_count`
@@ -253,7 +297,7 @@ Do not create a reusable helper script for this command.
 
 ---
 
-## Step 6 — Completion Summary
+## Step 7 — Completion Summary
 
 Print a completion summary:
 
@@ -261,11 +305,13 @@ Print a completion summary:
 ✓ me_goals.md:      {me_goals_path}
 ✓ dbt repo:         {dbt_repo_path}
 ✓ profile file:     {profiles_path}
-✓ source YAML:      {sources_path}
+✓ tunnel port:      {tunnel_port}
+✓ source YAML files: {sources_paths}
+✓ source files:     {sources_file_count}
 ✓ sources profiled: {source_count}
 ✓ tables profiled:  {table_count}
 ```
 
 Then print:
-- "Review the inferred PII flags and data-quality notes in `{sources_path}`."
-- "Next → run `/curate_metrics` using `me_goals.md` and the enriched source YAML."
+- "Review the inferred PII flags and data-quality notes in the enriched YAML files."
+- "Next → run `/curate_metrics` using `me_goals.md` and the enriched source YAML files."

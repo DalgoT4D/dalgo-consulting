@@ -119,17 +119,18 @@ flowchart TD
      - Join keys (IDs linking tables)
      - Date/time fields and formats
      - Anomalies, duplicates, encoding issues
-   - The command accepts either a consultant-authored `source.yml` / `sources.yml` working file or an existing dbt source YAML from the dbt repo.
-   - It infers likely PII heuristically, records those flags in the YAML, and does not store sample values for columns marked as PII.
-   - Input: `me_goals.md` (for engagement context and metric intent), plus a passed `source.yml` / `sources.yml` file containing relevant raw tables and their schemas
-   - Output: that same YAML file, enhanced and populated with table-level and column-level profiling information, inferred PII flags, and LLM notes to improve future usage and decision making
+   - The command accepts one or more consultant-authored `source.yml` / `sources.yml` working files, or existing dbt source YAMLs from the dbt repo.
+   - At the start, it reminds the consultant to ensure any required SSH tunnel is already running and captures the local tunnel port before warehouse validation.
+   - It respects any consultant-marked PII columns already present in the YAML, does not inspect raw values from those columns during analysis, may infer additional likely PII heuristically, and does not store sample values for columns marked as PII.
+   - Input: `me_goals.md` (for engagement context and metric intent), plus one or more passed `source.yml` / `sources.yml` files containing relevant raw tables and their schemas
+   - Output: those same YAML files, enhanced and populated with table-level and column-level profiling information, explicit + inferred PII flags, and LLM notes to improve future usage and decision making
 
 ### Artifacts
 
 | Artifact | Format | Owner | Purpose |
 |---|---|---|---|
-| `source.yml` / `sources.yml` | YAML | Consultant | Input for LLM to begin data exploration. May be a consultant-authored working file or an existing dbt source YAML. |
-| `source.yml` / `sources.yml` | YAML | LLM | The same YAML file, enriched with column profiles, inferred PII flags, date/join key notes, anomalies, and table summaries. |
+| `source.yml` / `sources.yml` | YAML | Consultant | Input for LLM to begin data exploration. May be one or more consultant-authored working files or existing dbt source YAMLs, with optional explicit PII flags already marked. |
+| `source.yml` / `sources.yml` | YAML | LLM | The same YAML files, enriched with column profiles, explicit + inferred PII flags, date/join key notes, anomalies, and table summaries. |
 
 ---
 
@@ -290,7 +291,7 @@ Google Sheets (linked from workdocs, not stored as files):
 └── Data Dictionary Sheet          ← generated at engagement close
 
 YAML (in dbt project):
-└── source.yml / sources.yml       ← dbt source YAML that may be passed directly to /explore_data and enriched in place
+└── source.yml / sources.yml       ← one or more dbt source YAMLs that may be passed directly to /explore_data and enriched in place
 ```
 
 ---
@@ -329,5 +330,5 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 - **Documentation is part of delivery, not cleanup:** Use dbt-osmosis refactor and generate to fill missing documentation and propagate it through the dbt project.
 - **Lint the whole model set:** SQLFluff is run across all models for both new builds and modifications, and lint issues are fixed before the PR is opened.
 - **Delivery is PR-based:** Consulting changes ship through a dedicated branch and GitHub pull request to `main`, never by direct push to a shared branch.
-- **PII must not be exposed in artifacts:** `/explore_data` may infer likely PII heuristically, but columns marked PII must not retain sample values in the saved YAML.
+- **PII must not be exposed in artifacts:** `/explore_data` must respect consultant-marked PII columns, avoid raw-value inspection for them during analysis, may infer additional likely PII heuristically, and must not retain sample values for columns marked PII in the saved YAML.
 - **NGO data quality is often poor:** Paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. The staging layer must be defensive; document assumptions explicitly in `sources.yml` and `schema.yml`.

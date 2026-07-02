@@ -120,5 +120,5 @@ Print a completion summary:
 ```
 
 Then print the next step guidance:
-- **new engagement:** "Next → ingest raw data via Airbyte for all sources listed in me_goals.md, then run `/explore_data path/to/source.yml`."
+- **new engagement:** "Next → ingest raw data via Airbyte for all sources listed in me_goals.md, then run `/explore_data path/to/source.yml [path/to/other_source.yml ...]`."
 - **modification:** "Next → review `me_goals.md` for updated context, then run `/curate_metrics`."
