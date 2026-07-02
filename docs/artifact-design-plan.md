@@ -19,8 +19,8 @@ See [process.md](process.md) for the full workflow reference.
 
 | Artifact | Format | What needs to be designed |
 |---|---|---|
-| `sources.yml` (input) | YAML | Schema that the consultant creates before the LLM runs — raw table names, source system (Kobo, GSheets, etc.), PII column flags with descriptions pre-filled by consultant. |
-| `sources.yml` (output) | YAML | Extended schema that the LLM populates — adds column data types, null rates, cardinality, sample values, join key annotations, date field formats, and anomaly notes per column. |
+| `source.yml` / `sources.yml` (input) | YAML | Flexible schema that the consultant creates before the LLM runs, or an existing dbt source YAML the consultant chooses to pass directly. It may include `version`, existing dbt `tests` / `meta` / `tags`, optional `identifier`, and partial `columns` blocks. |
+| `source.yml` / `sources.yml` (output) | YAML | The same YAML file, enriched in place by the LLM. It preserves user-authored dbt fields and adds generated profiling fields such as table row counts, candidate primary/join keys, date columns, anomalies, LLM notes, and column-level data types, null rates, cardinality, inferred PII flags, date-format notes, and sample values for non-PII columns only. |
 
 ---
 
@@ -51,7 +51,7 @@ See [process.md](process.md) for the full workflow reference.
 | Phase | Artifacts to design |
 |---|---|
 | 1 — Discovery | Requirements Sheet (GSheet — 4 tabs), `me_goals.md` |
-| 2 — Data Exploration | `sources.yml` input schema, `sources.yml` output schema |
+| 2 — Data Exploration | Flexible `source.yml` / `sources.yml` input schema, enriched in-place output schema |
 | 3 — Framework | `metrics.md`, KPI Framework Sheet (GSheet), `er_diagram.md` |
 | 4 — Model Development | `stg_*.sql`, `int_*.sql`, `fct_*.sql`/`dim_*.sql`, `schema.yml`, Data Dictionary Sheet (GSheet) |
 
