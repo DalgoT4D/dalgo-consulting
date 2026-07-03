@@ -20,7 +20,7 @@ See `workdocs/consulting/process.md` for the full process reference.
 dalgo-consulting/
 ├── .claude/
 │   ├── agents/
-│   ├── commands/consulting/
+│   ├── commands/
 │   └── skills/
 ├── secrets/
 │   └── my_service_key.json       ← Google service account key (gitignored)
@@ -54,7 +54,7 @@ Always check which track applies before starting work. Modification is the defau
 | Command | Phase | What It Does |
 |---------|-------|-------------|
 | `/discover` | Discovery | Interactive setup wizard — collects engagement details, creates folder structure, reads Requirements Sheet, generates `me_goals.md` |
-| `/explore_data` | Data Exploration | Profiles raw tables in `sources.yml`; skips PII columns; uses `me_goals.md` for context |
+| `/explore_data` | Data Exploration | Profiles raw tables across one or more passed `source.yml` / `sources.yml` files, prompts for SSH tunnel readiness, respects pre-marked PII, infers additional likely PII, and rewrites the same YAML files using `me_goals.md` for context |
 | `/curate_metrics` | Framework | Reads `me_goals.md` + `sources.yml` → `metrics.md` |
 | `/build_kpi_sheet` | Framework | Builds or updates the KPI Framework Sheet from `me_goals.md` + `sources.yml` |
 | `/generate_er_diagram` | Framework | Designs entity model → `er_diagram.md` |
@@ -85,7 +85,8 @@ Always check which track applies before starting work. Modification is the defau
 - **KPI Framework is the contract** — no dbt model is written without a corresponding KPI row in the Framework Sheet.
 - **Data exploration before framework authoring** — raw table shape must be understood before the KPI Framework is built.
 - **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
-- **Never touch PII columns** — `sources.yml` will have PII columns pre-marked and documented by the consultant; do not query or expose them.
+- **Do not expose PII in artifacts** — `/explore_data` must respect consultant-marked PII columns, avoid querying raw values from them during analysis, and never store sample values for columns marked PII.
+- **Preserve source YAML structure** — `source.yml` / `sources.yml` may vary across client repos; generated metadata must be merged into the existing YAML without dropping user-authored dbt fields.
 - **NGO data is often messy** — paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. Staging models must be defensive. Document assumptions explicitly.
 - **Finalization is mandatory** — SQLFluff + dbt-osmosis + GitHub PR before every delivery, for both tracks.
 - **Delivery is PR-based** — consulting changes ship on a dedicated branch, never direct-pushed to main.

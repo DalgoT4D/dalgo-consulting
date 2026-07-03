@@ -119,17 +119,18 @@ flowchart TD
      - Join keys (IDs linking tables)
      - Date/time fields and formats
      - Anomalies, duplicates, encoding issues
-   - Avoids querying PII columns — consultant pre-fills PII column documentation in `sources.yml` before this step runs.
-   - Input: `me_goals.md` (for engagement context and metric intent), `sources.yml` created by consultant containing relevant raw tables and their schemas
-   - Output: `sources.yml` enhanced and populated with column-level information and LLM notes to improve future usage and decision making
-   - 
+   - The command accepts one or more consultant-authored `source.yml` / `sources.yml` working files, or existing dbt source YAMLs from the dbt repo.
+   - At the start, it reminds the consultant to ensure any required SSH tunnel is already running and captures the local tunnel port before warehouse validation.
+   - It respects any consultant-marked PII columns already present in the YAML, does not inspect raw values from those columns during analysis, may infer additional likely PII heuristically, and does not store sample values for columns marked as PII.
+   - Input: `me_goals.md` (for engagement context and metric intent), plus one or more passed `source.yml` / `sources.yml` files containing relevant raw tables and their schemas
+   - Output: those same YAML files, enhanced and populated with table-level and column-level profiling information, explicit + inferred PII flags, and LLM notes to improve future usage and decision making
 
 ### Artifacts
 
 | Artifact | Format | Owner | Purpose |
 |---|---|---|---|
-| `sources.yml` | Markdown | Consultant | Input for LLM to begin data exploration, with pii columns marked and documented |
-| `sources.yml` | Markdown | LLM | Per-table structure notes from exploration |
+| `source.yml` / `sources.yml` | YAML | Consultant | Input for LLM to begin data exploration. May be one or more consultant-authored working files or existing dbt source YAMLs, with optional explicit PII flags already marked. |
+| `source.yml` / `sources.yml` | YAML | LLM | The same YAML files, enriched with column profiles, explicit + inferred PII flags, date/join key notes, anomalies, and table summaries. |
 
 ---
 
@@ -277,6 +278,7 @@ workdocs/consulting/{engagement}/
 ├── discovery/
 │   └── me_goals.md                ← LLM-generated from Requirements Sheet; shared context for all downstream phases
 ├── data_exploration/
+│   ├── sources.yml                ← optional consultant working copy; /explore_data can also target a dbt repo source.yml directly
 │   └── er_diagram.md
 └── models/                        ← or inside the dbt project repo
     ├── staging/
@@ -289,7 +291,7 @@ Google Sheets (linked from workdocs, not stored as files):
 └── Data Dictionary Sheet          ← generated at engagement close
 
 YAML (in dbt project):
-└── sources.yml                    ← consultant-seeded, LLM-enriched during data exploration
+└── source.yml / sources.yml       ← one or more dbt source YAMLs that may be passed directly to /explore_data and enriched in place
 ```
 
 ---
@@ -303,7 +305,7 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 **Steps:**
 1. Open the existing KPI Framework Sheet for the client.
 2. Add new rows or mark existing rows for revision. Update calculation logic, filters, or source columns as needed.
-3. If the change involves a new data source: ingest via Airbyte, explore the new tables, update table_profiles.md, update the ER diagram if relationships change.
+3. If the change involves a new data source: ingest via Airbyte, explore the new tables, update the relevant `source.yml` / `sources.yml`, and update the ER diagram if relationships change.
 4. Identify the affected dbt model layers. Only rewrite or modify the models that are impacted — do not rebuild the full model set.
 5. Run dbt for affected models only. Verify output.
 6. Update the Data Dictionary Sheet to reflect added/changed tables and columns.
@@ -328,4 +330,5 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 - **Documentation is part of delivery, not cleanup:** Use dbt-osmosis refactor and generate to fill missing documentation and propagate it through the dbt project.
 - **Lint the whole model set:** SQLFluff is run across all models for both new builds and modifications, and lint issues are fixed before the PR is opened.
 - **Delivery is PR-based:** Consulting changes ship through a dedicated branch and GitHub pull request to `main`, never by direct push to a shared branch.
-- **NGO data quality is often poor:** Paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. The staging layer must be defensive; document assumptions explicitly in table_profiles.md and schema.yml.
+- **PII must not be exposed in artifacts:** `/explore_data` must respect consultant-marked PII columns, avoid raw-value inspection for them during analysis, may infer additional likely PII heuristically, and must not retain sample values for columns marked PII in the saved YAML.
+- **NGO data quality is often poor:** Paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. The staging layer must be defensive; document assumptions explicitly in `sources.yml` and `schema.yml`.
