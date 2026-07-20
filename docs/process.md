@@ -156,14 +156,7 @@ They are separate sheets because they have different audiences (client vs. data 
 
 ### Steps
 
-5. **Curate Metrics List** (`/curate_metrics`)
-   - Read the Metrics tab of the Requirements Sheet and enumerate all KPIs that need to be tracked.
-   - Use the explored raw tables to deduplicate, consolidate overlapping metrics, and flag anything ambiguous for clarification.
-   - This list becomes the rows of the KPI Framework Sheet.
-   - Input: `me_goals.md`, `sources.yml`
-   - Output: `metrics.md`
-
-6. **Build the KPI Framework Sheet** (`/build_kpi_sheet`)
+5. **Build the KPI Framework Sheet** (`/build_kpi_sheet`)
    - One row per KPI. Columns:
      - **KPI name** — human-readable label
      - **Requirements alignment** — which row in the Requirements Sheet this maps to
@@ -177,10 +170,26 @@ They are separate sheets because they have different audiences (client vs. data 
    - Input: `me_goals.md`, `sources.yml`
    - Output: KPI Framework Sheet (Google Sheet)
 
+6. **Build DBT Architecture Plan** (`/dbt_plan`)
+   - Use the KPI Framework Sheet and me_goals.md, analyze the requirements around what dashboards/metrics/charts/alerts/KPIs are needed to be built on Dalgo - and designs a plan for what dbt models are going to be built, and the flow of information around the models.
+   - DBT Models will be structure in three layers:
+      - **staging** - The layer right above the sources - the models here will clean, deduplicate, rename columns etc. A basic layer of cleaning and staging before downstream models get involved in more complex analysis. 
+      - **intermediate** - This layer is for intermediate processing. Joining, clean ups, aggregations, etc will happen in this layer. 
+      - **marts** - The final layer of cleaned up, final tables. These models will be used to build the final production dashboards/metrics/KPIs/charts/alerts. They should have tables with all the required analytics performed on them already, as we aren't performing calculations on the dashboard layer. Design the tables so that they can be reused as needed across all related charts/metrics/KPIs. Avoid unnecessary bloat. Some charts might need long tables, while others need wide - so both fact and dimension tables must be created IF needed.
+   - The plan will need to contain:
+      - Which models are created in which layer.
+      - Which models read from which other models.
+      - What aggregations/joins/calculations need to happen in each models.
+      - Concerns needed to be handled by the model (duplicates, bad date formatting etc)
+      - Filters - dashboards will need filters that work across all the charts - so all the models will need to have the appropriate filterable columns. Include a filter plan in the md file.
+      - Use macros for constantly reused logic - eg: validating date columns, converting dates to quarters/fiscal years etc
+   - Input: `me_goals.md`, KPI Framework Sheet (Google Sheet)
+   - Output: `dbt_plan.md`
+
 7. **Design ER Diagram** (`/generate_er_diagram`)
    - Use the KPI Framework Sheet to decide which entities, joins, and dbt model boundaries are needed.
    - Document: entities and grain, relationships and cardinalities, which raw tables map to which entities, and the join paths needed for each KPI.
-   - Input: `me_goals.md`, KPI Framework Sheet, `sources.yml`
+   - Input: `me_goals.md`, `dbt_plan.md`, `sources.yml`
    - Output: `er_diagram.md`
 
 ### Artifacts
@@ -189,7 +198,7 @@ They are separate sheets because they have different audiences (client vs. data 
 |---|---|---|---|
 | KPI Framework Sheet | Google Sheet | Consultant | Technical spec for every metric: definition, calculation logic, sources, granularity. Built after data exploration and used as the contract for model development. |
 | `er_diagram.md` / `.png` | Markdown / Image | Consultant | Entity-relationship diagram derived from the KPI Framework and used to shape dbt models. |
-
+| `dbt_plan.md` | Markdown | Consultant | A plan for the implementation and building of the DBT Project |
 ---
 
 ## Phase 4: Model Development (dbt Medallion Architecture)
