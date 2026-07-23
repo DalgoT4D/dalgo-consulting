@@ -83,12 +83,13 @@ Use this structure:
 ## Macro Changes
 ## dbt_plan.md / er_diagram.md Updates
 ## Data Dictionary Impact
+## GitHub Delivery
 ## Validation Plan
 ## Risks And Blockers
 ## Implementation Checklist
 ```
 
-Be precise about paths, model names, selectors, and validation checks.
+Be precise about paths, model names, selectors, validation checks, and whether the dbt repo has a GitHub remote.
 
 ## Step 5 — Stop After Planning Unless Confirmed Mode
 
@@ -125,7 +126,33 @@ Record:
 - important query results
 - unresolved blockers
 
-## Step 8 — Update Metadata
+## Step 8 — Optional GitHub Delivery
+
+If implementation and validation succeeded, inspect the dbt repo remotes:
+
+```bash
+git -C "{dbt_repo_path}" remote -v
+```
+
+If a GitHub remote exists, ask:
+
+> "Should I commit and push the dbt repo changes to GitHub? (yes / no)"
+
+If the answer is not clearly yes, do not commit or push. Record that delivery was skipped by user choice.
+
+If yes:
+
+1. Show the dbt repo status.
+2. Create or switch to a dedicated branch for this change.
+3. Stage only the files listed in `Files To Edit` plus required generated documentation/Data Dictionary artifacts.
+4. Commit with a concise message tied to the change request or investigation.
+5. Push the branch to the GitHub remote.
+6. If GitHub CLI or connected GitHub tooling is available, ask whether to open a pull request. Open the PR only after confirmation.
+
+Never commit, push, or open a PR without explicit user confirmation.
+Never stage unrelated dirty files.
+
+## Step 9 — Update Metadata
 
 Write or update:
 
@@ -141,6 +168,12 @@ Include:
   "status": "planned|implemented|blocked",
   "files_edited": [],
   "dbt_commands_run": [],
+  "github_delivery": {
+    "github_remote_detected": false,
+    "pushed": false,
+    "branch": "",
+    "pr_url": ""
+  },
   "data_dictionary_refresh_required": true,
   "dbt_plan_updated": false,
   "er_diagram_updated": false

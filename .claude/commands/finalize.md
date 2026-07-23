@@ -116,15 +116,20 @@ Preserve existing keys.
 
 ## Step 7 — PR Readiness And Delivery
 
-If all checks pass, ask the user whether to create/push a branch and open a GitHub PR.
+If all checks pass, inspect the dbt repo and consulting repo remotes.
+
+For each repo with a GitHub remote and relevant changes, ask the user whether to create/push a branch and open a GitHub PR.
 
 Do not create, push, or open a PR without explicit user confirmation.
 
 If confirmed:
 - create or switch to a dedicated delivery branch
-- commit only the intended consulting/dbt changes
+- commit only the intended consulting/dbt changes for that repo
 - push the branch
-- open a PR against `main`
+- ask whether to open a PR against `main`
+- open the PR only after confirmation
+
+If a repo does not have a GitHub remote, report that GitHub delivery is unavailable for that repo.
 
 Print:
 

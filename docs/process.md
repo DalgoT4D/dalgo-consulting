@@ -281,7 +281,7 @@ This is the single final step after the Data Dictionary is generated, for both n
 
 4. **Create a new branch and open a GitHub PR to `main`**
    - All consulting code changes should be delivered on a dedicated git branch, not pushed directly to a shared branch.
-   - Push that branch to GitHub and open a pull request against `main`.
+   - If the dbt repo has a GitHub remote, ask before pushing the branch or opening a pull request against `main`.
    - The PR is the review and merge gate for both new-engagement work and modification work.
 
 ### Artifacts
@@ -383,6 +383,7 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 - **Requirement changes and bugs use different paths:** Requirement changes go through `/modify`; wrong numbers, duplicates, freshness issues, and dashboard discrepancies go through `/investigate`.
 - **No unconfirmed edits:** `/modify` asks before writing KPI Framework changes, and `/dbt_edit_plan` asks before editing dbt SQL, macros, source YAMLs, or dbt `.yml` files.
 - **Modification work is auditable:** Every change or investigation gets a durable folder with the request, plan, SQL run, results, and metadata.
+- **GitHub delivery is explicit:** When the dbt repo has a GitHub remote, `/dbt_edit_plan` and `/finalize` ask before committing, pushing, or opening a PR.
 - **Layer-by-layer verification:** Models are run and validated at each layer boundary before the next layer is written.
 - **Finalization is mandatory:** After the Data Dictionary step, always run the single Finalization step before delivery.
 - **Documentation is part of delivery, not cleanup:** Use AI to write clear dbt YAML model and column documentation directly, then generate dbt docs from it.

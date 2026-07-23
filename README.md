@@ -250,6 +250,7 @@ Lightweight path for existing clients adding or changing metrics.
 - **Requirement changes and bugs use different paths** — use `/modify` for analytics contract changes, and `/investigate` for wrong numbers, duplicates, freshness, or dashboard discrepancies.
 - **No unconfirmed edits** — `/modify` asks before writing KPI Framework changes, and `/dbt_edit_plan` asks before editing dbt code/YAML.
 - **Modification work is auditable** — every change or investigation gets a durable folder with the request, plan, SQL run, and metadata.
+- **GitHub delivery is explicit** — when a dbt repo has a GitHub remote, `/dbt_edit_plan` and `/finalize` ask before committing, pushing, or opening a PR.
 - **Data exploration before framework authoring** — raw table shape is understood before the KPI Framework is built.
 - **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
 - **PII must not be exposed in artifacts** — `/explore_data` respects consultant-marked PII, avoids raw-value inspection for those columns, may infer additional likely PII heuristically, and never stores sample values for columns marked PII.

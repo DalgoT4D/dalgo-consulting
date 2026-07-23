@@ -110,6 +110,7 @@ Always check which track applies before starting work. Modification is the defau
 - **Marts are chart-ready, not facts/dimensions by default** — final models use `marts_` naming and are shaped around Dalgo output requirements.
 - **Requirement changes and bugs use different paths** — use `/modify` for analytics contract changes, and `/investigate` for wrong numbers, duplicates, freshness, or dashboard discrepancies.
 - **No unconfirmed edits** — `/modify` asks before writing KPI Framework changes, and `/dbt_edit_plan` asks before editing dbt code/YAML.
+- **GitHub delivery is explicit** — when a dbt repo has a GitHub remote, `/dbt_edit_plan` and `/finalize` ask before committing, pushing, or opening a PR.
 - **Data exploration before framework authoring** — raw table shape must be understood before the KPI Framework is built.
 - **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
 - **Do not expose PII in artifacts** — `/explore_data` must respect consultant-marked PII columns, avoid querying raw values from them during analysis, and never store sample values for columns marked PII.

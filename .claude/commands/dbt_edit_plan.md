@@ -31,6 +31,7 @@ After the skill writes `dbt_edit_plan.md`, summarize:
 - validation commands
 - whether `dbt_plan.md` or `er_diagram.md` will be updated
 - whether Data Dictionary refresh is required
+- whether the dbt repo has a GitHub remote and can be pushed after successful validation
 
 ---
 
@@ -71,4 +72,5 @@ Print:
 ✓ files edited:       {files_edited}
 ✓ validation:         passed/blocked/not run
 ✓ Data Dictionary:    refreshed/not required/pending
+✓ GitHub delivery:    pushed/skipped/not available
 ```
