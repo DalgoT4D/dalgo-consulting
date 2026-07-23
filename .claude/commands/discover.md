@@ -63,6 +63,9 @@ Create the following directory structure:
 workdocs/consulting/{engagement}/
 ├── discovery/
 ├── data_exploration/
+├── framework/
+├── modifications/
+├── investigations/
 └── models/
 ```
 Confirm to the user that the folders have been created.
@@ -121,4 +124,4 @@ Print a completion summary:
 
 Then print the next step guidance:
 - **new engagement:** "Next → ingest raw data via Airbyte for all sources listed in me_goals.md, then run `/explore_data path/to/source.yml [path/to/other_source.yml ...]`."
-- **modification:** "Next → review `me_goals.md` for updated context, then run `/curate_metrics`."
+- **modification:** "Next → review `me_goals.md` for updated context, then run `/build_kpi_sheet path/to/source.yml [path/to/other_source.yml ...]`."

@@ -314,4 +314,4 @@ Print a completion summary:
 
 Then print:
 - "Review the inferred PII flags and data-quality notes in the enriched YAML files."
-- "Next → run `/curate_metrics` using `me_goals.md` and the enriched source YAML files."
+- "Next → run `/build_kpi_sheet` using `me_goals.md` and the enriched source YAML files."

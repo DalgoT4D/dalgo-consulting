@@ -21,7 +21,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-DEFAULT_KEY_FILE = Path(__file__).parent.parent.parent.parent / "secrets" / "my_service_key.json"
+DEFAULT_KEY_FILE = Path(__file__).parent.parent / "secrets" / "my_service_key.json"
 
 TABS_TO_READ = ["Engagement Context", "Data Sources", "Metrics"]
 
