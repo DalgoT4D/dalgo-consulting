@@ -162,12 +162,39 @@ Store:
 
 ---
 
-## Step 5 — Profile Each Source Table
+## Step 5 — Detect Missing Source Declarations From Existing dbt SQL
+
+If `{dbt_repo_path}` contains existing dbt models, scan SQL files under `models/` for dbt source references:
+
+```text
+source('source_name', 'table_name')
+source("source_name", "table_name")
+```
+
+Compare those references with the loaded `{sources_yamls}`.
+
+For each referenced source/table pair that is missing from the YAML:
+- If the source name exists in one of the loaded YAML files, use that source's schema and database settings.
+- If the source name does not exist but there is exactly one loaded source with a schema matching the likely raw schema in `me_goals.md`, ask the user before mapping it.
+- Verify the physical table exists in the warehouse before adding it.
+- If the physical table exists, add it to the profiling set and mark it as a missing dbt source declaration that will be written back into the same YAML.
+- If the physical table does not exist, stop and report the missing table exactly.
+
+This step is required when working with an existing dbt repo. A stale or incomplete `sources.yml` must be corrected before downstream dbt parsing/modeling can succeed.
+
+Store:
+- `{missing_source_declarations}`
+
+---
+
+## Step 6 — Profile Each Source Table
 
 For each YAML file in `{sources_yamls}`:
 - iterate through each source in that file's `sources` collection
 - read the source-level `schema`
 - respect an explicit `database` if present
+
+Also include every verified table from `{missing_source_declarations}` in the profiling set.
 
 For each table:
 - use `identifier` when present; otherwise use `name`
@@ -256,7 +283,7 @@ Use these guidelines when generating table-level outputs:
 
 ---
 
-## Step 6 — Merge Enrichment Back Into The Same YAML
+## Step 7 — Merge Enrichment Back Into The Same YAML
 
 Rewrite every file in `{sources_paths}` in place.
 
@@ -264,6 +291,7 @@ Merge rules:
 - Preserve all existing user-authored keys at root, source, table, and column level.
 - Never overwrite existing `description`, `tests`, `meta`, `tags`, or unknown custom keys.
 - Update only generated fields.
+- Add verified missing source declarations from existing dbt SQL to the most appropriate loaded YAML file.
 - If a table already has a `columns` list, match existing columns by exact `name`.
 - If a warehouse column is missing from the YAML, add it in warehouse ordinal order.
 - If a previous run left generated fields, replace them with fresh values rather than duplicating them.
@@ -297,7 +325,7 @@ Do not create a reusable helper script for this command.
 
 ---
 
-## Step 7 — Completion Summary
+## Step 8 — Completion Summary
 
 Print a completion summary:
 
@@ -307,6 +335,7 @@ Print a completion summary:
 ✓ profile file:     {profiles_path}
 ✓ tunnel port:      {tunnel_port}
 ✓ source YAML files: {sources_paths}
+✓ source declarations added: {missing_source_declarations}
 ✓ source files:     {sources_file_count}
 ✓ sources profiled: {source_count}
 ✓ tables profiled:  {table_count}

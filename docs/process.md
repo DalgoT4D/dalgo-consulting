@@ -130,6 +130,7 @@ flowchart TD
      - Date/time fields and formats
      - Anomalies, duplicates, encoding issues
    - The command accepts one or more consultant-authored `source.yml` / `sources.yml` working files, or existing dbt source YAMLs from the dbt repo.
+   - When run against an existing dbt repo, it also scans current dbt SQL for missing `source()` declarations and adds verified warehouse tables back into the enriched source YAML.
    - At the start, it reminds the consultant to ensure any required SSH tunnel is already running and captures the local tunnel port before warehouse validation.
    - It respects any consultant-marked PII columns already present in the YAML, does not inspect raw values from those columns during analysis, may infer additional likely PII heuristically, and does not store sample values for columns marked as PII.
    - Input: `me_goals.md` (for engagement context and metric intent), plus one or more passed `source.yml` / `sources.yml` files containing relevant raw tables and their schemas
