@@ -154,6 +154,7 @@ Required fields:
 - `primary_kpis`
 - `required_filters`
 - `required_drilldowns`
+- `status` — `active`, `revised`, `deprecated`, or `needs_client_input`
 - `change_request_id`
 - `change_reason`
 - `changed_at`
@@ -178,6 +179,7 @@ Required fields:
 - `default_time_window`
 - `grain_needed`
 - `mart_model`
+- `status` — `active`, `revised`, `deprecated`, or `needs_client_input`
 - `change_request_id`
 - `change_reason`
 - `changed_at`
@@ -200,6 +202,7 @@ Required fields:
 - `allowed_values_logic`
 - `default_value`
 - `required_for_all_charts`
+- `status` — `active`, `revised`, `deprecated`, or `needs_client_input`
 - `change_request_id`
 - `change_reason`
 - `changed_at`
@@ -222,6 +225,7 @@ Required fields:
 - `cadence`
 - `required_grain`
 - `mart_model`
+- `status` — `active`, `revised`, `deprecated`, or `needs_client_input`
 - `change_request_id`
 - `change_reason`
 - `changed_at`
@@ -240,7 +244,7 @@ Required fields:
 - `owner`
 - `status`
 
-Use `active` for current rows, `revised` for rows changed by a modification, `deprecated` for rows intentionally retired, and `needs_client_input` where the calculation, grain, filters, or source mapping cannot be safely inferred.
+Use `active` for current rows, `revised` for rows changed by a modification, `deprecated` for rows intentionally retired, and `needs_client_input` where the calculation, grain, filters, charting requirement, or source mapping cannot be safely inferred.
 
 ---
 

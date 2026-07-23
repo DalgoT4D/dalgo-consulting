@@ -177,7 +177,7 @@ They are separate sheets because they have different audiences (client vs. data 
      - **Filters & Drilldowns** — reusable filters and drilldown paths, including source columns, canonical dimension models, allowed value logic, defaults, and whether they apply across all charts.
      - **Alerts** — thresholds or alert requirements, including KPI, condition, threshold, comparison period, audience, cadence, required grain, and mart model.
      - **Open Questions** — ambiguities that affect implementation, with suggested defaults and owners.
-   - Status values for KPI Framework rows are **active**, **revised**, **deprecated**, and **needs_client_input**.
+   - Status values for KPI Framework rows are **active**, **revised**, **deprecated**, and **needs_client_input**. Apply these to KPI, dashboard, visual, filter/drilldown, alert, and open-question rows so modifications remain auditable across the whole analytics contract.
    - Chart type is captured at the visual level, not inferred only from the KPI. The same KPI may appear as a scorecard, trend line, district comparison, cohort table, or alert.
    - Input: `me_goals.md`, enriched `source.yml` / `sources.yml`
    - Output: KPI Framework Sheet (Google Sheet), `kpi_framework.md`, `kpi_framework.json`

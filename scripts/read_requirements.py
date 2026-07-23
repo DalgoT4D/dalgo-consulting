@@ -89,14 +89,15 @@ def main():
             table = rows_to_markdown_table(rows)
             output_sections.append(f"## {tab}\n\n{table}")
         except HttpError as e:
-            if e.status_code == 403:
+            status = getattr(getattr(e, "resp", None), "status", None)
+            if status == 403:
                 email = get_client_email(args.key_file)
                 print(
                     f"ERROR 403: Cannot read sheet. Share it (Editor) with: {email}",
                     file=sys.stderr,
                 )
                 sys.exit(1)
-            elif e.status_code == 400:
+            elif status == 400:
                 # Tab might not exist yet (e.g. Data Sources not yet filled)
                 output_sections.append(f"## {tab}\n\n_Tab not found or empty — may not be filled yet._")
             else:
