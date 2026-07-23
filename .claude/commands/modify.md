@@ -112,6 +112,8 @@ Use KPI Framework status values:
 - `deprecated`
 - `needs_client_input`
 
+Use `needs_client_input` for unresolved open questions. Do not use `open`, `closed`, `draft`, `planned`, or any other status value in KPI Framework patches.
+
 Set:
 - `change_request_id`
 - `change_reason`

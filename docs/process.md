@@ -132,6 +132,7 @@ flowchart TD
    - The command accepts one or more consultant-authored `source.yml` / `sources.yml` working files, or existing dbt source YAMLs from the dbt repo.
    - When run against an existing dbt repo, it also scans current dbt SQL for missing `source()` declarations and adds verified warehouse tables back into the enriched source YAML.
    - At the start, it reminds the consultant to ensure any required SSH tunnel is already running and captures the local tunnel port before warehouse validation.
+   - It may read dbt profile files and resolved environment variables only for connectivity validation. It must never print raw profile contents, usernames, passwords, tokens, private keys, or resolved secret values in chat or artifacts.
    - It respects any consultant-marked PII columns already present in the YAML, does not inspect raw values from those columns during analysis, may infer additional likely PII heuristically, and does not store sample values for columns marked as PII.
    - Input: `me_goals.md` (for engagement context and metric intent), plus one or more passed `source.yml` / `sources.yml` files containing relevant raw tables and their schemas
    - Output: those same YAML files, enhanced and populated with table-level and column-level profiling information, explicit + inferred PII flags, and LLM notes to improve future usage and decision making
@@ -179,6 +180,7 @@ They are separate sheets because they have different audiences (client vs. data 
      - **Alerts** — thresholds or alert requirements, including KPI, condition, threshold, comparison period, audience, cadence, required grain, and mart model.
      - **Open Questions** — ambiguities that affect implementation, with suggested defaults and owners.
    - Status values for KPI Framework rows are **active**, **revised**, **deprecated**, and **needs_client_input**. Apply these to KPI, dashboard, visual, filter/drilldown, alert, and open-question rows so modifications remain auditable across the whole analytics contract.
+   - Use `needs_client_input` for unresolved open-question rows. Do not use ad hoc status values such as `open`, `closed`, `draft`, or `planned`.
    - Chart type is captured at the visual level, not inferred only from the KPI. The same KPI may appear as a scorecard, trend line, district comparison, cohort table, or alert.
    - Input: `me_goals.md`, enriched `source.yml` / `sources.yml`
    - Output: KPI Framework Sheet (Google Sheet), `kpi_framework.md`, `kpi_framework.json`

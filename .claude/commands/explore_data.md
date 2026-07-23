@@ -131,6 +131,12 @@ Read:
 If the profile uses environment variables, resolve them from the current shell environment before continuing.
 If required variables are missing, stop and list them explicitly.
 
+Credential handling is strict:
+- Never print, copy, or summarize raw `profiles.yml` / `profiles.yaml` contents.
+- Never print resolved passwords, tokens, private keys, usernames, or environment variable values.
+- If reporting connection context, show only the profile name, target name, adapter type, database, schema, and redacted host/port as needed.
+- If an error message includes credentials, redact it before showing it to the user or writing artifacts.
+
 If the resolved warehouse host is local (`localhost`, `127.0.0.1`, or equivalent) and `{tunnel_port}` is not `none`:
 - compare the resolved profile port with `{tunnel_port}`
 - if they do not match, stop and show the mismatch clearly

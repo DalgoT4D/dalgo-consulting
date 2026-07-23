@@ -57,6 +57,12 @@ Use the same warehouse access pattern as `/explore_data`:
 5. Confirm the active adapter is Postgres-compatible for v1.
 6. Build the warehouse connection for investigative SQL.
 
+Credential handling is strict:
+- Never print, copy, or summarize raw `profiles.yml` / `profiles.yaml` contents.
+- Never print resolved passwords, tokens, private keys, usernames, or environment variable values.
+- If reporting connection context, show only the profile name, target name, adapter type, database, schema, and redacted host/port as needed.
+- If an error message includes credentials, redact it before showing it to the user or writing artifacts.
+
 If access cannot be verified, stop and write the blocker to `investigation.md`.
 
 ## Step 4 — Define The Diagnostic Question

@@ -113,6 +113,7 @@ Always check which track applies before starting work. Modification is the defau
 - **GitHub delivery is explicit** — when a dbt repo has a GitHub remote, `/dbt_edit_plan` and `/finalize` ask before committing, pushing, or opening a PR.
 - **Data exploration before framework authoring** — raw table shape must be understood before the KPI Framework is built.
 - **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
+- **Never expose credentials** — commands may read dbt profiles and environment variables for connectivity, but must never print raw profile files, usernames, passwords, tokens, private keys, or resolved secret values.
 - **Do not expose PII in artifacts** — `/explore_data` must respect consultant-marked PII columns, avoid querying raw values from them during analysis, and never store sample values for columns marked PII.
 - **Preserve source YAML structure** — `source.yml` / `sources.yml` may vary across client repos; generated metadata must be merged into the existing YAML without dropping user-authored dbt fields.
 - **NGO data is often messy** — paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. Staging models must be defensive. Document assumptions explicitly.

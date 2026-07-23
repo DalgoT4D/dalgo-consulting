@@ -139,6 +139,8 @@ TABS: dict[str, list[str]] = {
     ],
 }
 
+ALLOWED_STATUS_VALUES = {"active", "revised", "deprecated", "needs_client_input"}
+
 
 def get_services(key_file: Path):
     creds = service_account.Credentials.from_service_account_file(str(key_file), scopes=SCOPES)
@@ -288,6 +290,47 @@ def coerce_cell(value: Any) -> str:
     return str(value)
 
 
+def validate_input_data(input_data: Any) -> None:
+    if not isinstance(input_data, dict):
+        raise ValueError("input JSON must be an object keyed by KPI Framework tab name")
+
+    expected_tabs = set(TABS)
+    actual_tabs = set(input_data)
+    missing_tabs = sorted(expected_tabs - actual_tabs)
+    extra_tabs = sorted(actual_tabs - expected_tabs)
+    if missing_tabs or extra_tabs:
+        messages = []
+        if missing_tabs:
+            messages.append(f"missing tabs: {', '.join(missing_tabs)}")
+        if extra_tabs:
+            messages.append(f"unknown tabs: {', '.join(extra_tabs)}")
+        raise ValueError("input JSON must contain exactly the KPI Framework tabs (" + "; ".join(messages) + ")")
+
+    for tab, rows in input_data.items():
+        if not isinstance(rows, list):
+            raise ValueError(f"{tab} must be a list of row objects")
+
+        headers = TABS[tab]
+        if "status" not in headers:
+            continue
+
+        status_index = headers.index("status")
+        for row_number, row in enumerate(rows, start=2):
+            if isinstance(row, dict):
+                status = coerce_cell(row.get("status", "")).strip()
+            elif isinstance(row, list):
+                status = coerce_cell(row[status_index]).strip() if status_index < len(row) else ""
+            else:
+                raise ValueError(f"{tab} row {row_number} must be an object or list")
+
+            if status not in ALLOWED_STATUS_VALUES:
+                allowed = ", ".join(sorted(ALLOWED_STATUS_VALUES))
+                raise ValueError(
+                    f"{tab} row {row_number} has invalid status {status!r}; "
+                    f"allowed values are: {allowed}"
+                )
+
+
 def rows_for_tab(input_data: dict[str, Any], tab: str) -> list[list[str]]:
     headers = TABS[tab]
     rows = input_data.get(tab, [])
@@ -307,6 +350,7 @@ def rows_for_tab(input_data: dict[str, Any], tab: str) -> list[list[str]]:
 
 def write_spreadsheet(sheets, sheet_id: str, input_json: Path) -> None:
     input_data = json.loads(input_json.read_text())
+    validate_input_data(input_data)
     ensure_tabs(sheets, sheet_id)
 
     data = []

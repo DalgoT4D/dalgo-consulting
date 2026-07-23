@@ -31,6 +31,12 @@ The skill must verify warehouse access using the same pattern as `/explore_data`
 - `dbt debug`
 - Postgres-compatible connection for v1
 
+Credential handling is strict:
+- Never print, copy, or summarize raw `profiles.yml` / `profiles.yaml` contents.
+- Never print resolved passwords, tokens, private keys, usernames, or environment variable values.
+- If reporting connection context, show only the profile name, target name, adapter type, database, schema, and redacted host/port as needed.
+- If an error message includes credentials, redact it before showing it to the user or writing artifacts.
+
 If access is blocked, write the blocker to the investigation folder and stop.
 
 ---

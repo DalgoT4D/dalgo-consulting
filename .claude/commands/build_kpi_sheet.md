@@ -113,6 +113,16 @@ The JSON must have exactly these top-level keys:
 - `Alerts`
 - `Open Questions`
 
+Do not write a pointer-only or metadata-only draft. Even when Google Sheets is unavailable and a local fallback is used, `kpi_framework_draft.json` and `kpi_framework.json` must use the full tab-shaped object above.
+
+Every non-empty row in every tab must use one of these status values only:
+- `active`
+- `revised`
+- `deprecated`
+- `needs_client_input`
+
+Do not use `open`, `closed`, `draft`, `planned`, or any other value in KPI Framework `status` fields.
+
 ### KPI Catalog
 
 One row per KPI or metric.
