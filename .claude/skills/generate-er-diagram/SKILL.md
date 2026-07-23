@@ -87,6 +87,17 @@ Include key columns and important filter/drilldown columns in each entity block.
 
 Do not include raw PII sample values. Column names may be shown when necessary.
 
+Mermaid ER attribute lines must use only valid Mermaid syntax:
+
+```text
+type column_name
+type column_name PK
+type column_name FK
+type column_name UK
+```
+
+Do not append non-key annotations such as `PII`, `sensitive`, `nullable`, or free-text notes inside an entity block. Put those notes in the prose sections below the diagram.
+
 ---
 
 ## Step 4 — Write `er_diagram.md`

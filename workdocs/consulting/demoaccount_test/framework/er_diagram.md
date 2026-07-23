@@ -24,7 +24,7 @@ erDiagram
         varchar order_total
         varchar tax_paid
         varchar ordered_at
-        varchar customer PII
+        varchar customer
     }
 
     RAW_STORES {
@@ -78,7 +78,7 @@ erDiagram
 
 | Entity / Model | Grain | Primary Key | Notes |
 |---|---|---|---|
-| RAW_ORDERS | one row per order | id | Customer is PII and should not flow into marts. |
+| RAW_ORDERS | one row per order | id | `customer` is PII and should not flow into marts. |
 | RAW_STORES | one row per store | id | Store lookup; six stores profiled. |
 | STG_ORDERS | one row per order | order_id | Casts text amounts and timestamps defensively. |
 | STG_STORES | one row per store | store_id | Casts tax rate and store opened timestamp. |
