@@ -38,6 +38,11 @@ If there are unrelated dirty changes, do not modify or revert them. Ask the user
 
 ## Step 2 — Run dbt Validation
 
+Before running dbt commands that query the warehouse, ask the user exactly:
+> "Can I read your database schema tables?"
+
+Continue only after the user confirms. If the user declines or does not answer, stop before `dbt build` or any other warehouse-backed validation and report finalization as blocked.
+
 Run the broadest safe dbt validation for the project:
 
 ```bash

@@ -122,6 +122,7 @@ flowchart TD
    - Confirm the source systems referenced in the Requirements Sheet are actually available.
 
 4. **Explore Raw Table Structure** (`explore-data`)
+   - Before any skill reads warehouse schemas/tables, verifies physical table existence, profiles source data, runs investigative SQL, or runs dbt commands that query the warehouse, it must ask the user: **"Can I read your database schema tables?"** Continue only after confirmation.
    - For each raw table, query to understand:
      - Column names and data types
      - Null rates and cardinality for key columns
@@ -385,6 +386,7 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 - **Modification track is the default for live clients:** Once a client is set up, almost all work flows through the modification track. Avoid re-running the full process unless the program structure has fundamentally changed.
 - **Requirement changes and bugs use different paths:** Requirement changes go through `modify-requirements`; wrong numbers, duplicates, freshness issues, and dashboard discrepancies go through `investigate-issue`.
 - **No unconfirmed edits:** `modify-requirements` asks before writing KPI Framework changes, and `dbt-edit-plan` asks before editing dbt SQL, macros, source YAMLs, or dbt `.yml` files.
+- **No warehouse reads without consent:** Any skill that needs to inspect warehouse schemas/tables, verify physical tables, profile data, run investigative SQL, or run dbt commands that query the warehouse must first ask: **"Can I read your database schema tables?"**
 - **Modification work is auditable:** Every change or investigation gets a durable folder with the request, plan, SQL run, results, and metadata.
 - **GitHub delivery is explicit:** When the dbt repo has a GitHub remote, `dbt-edit-plan` and `finalize-dbt-project` ask before committing, pushing, or opening a PR.
 - **Layer-by-layer verification:** Models are run and validated at each layer boundary before the next layer is written.

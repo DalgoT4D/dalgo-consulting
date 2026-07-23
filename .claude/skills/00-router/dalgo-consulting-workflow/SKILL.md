@@ -61,6 +61,9 @@ Data-quality/model/dashboard bugs go through `investigate-issue` first. If the i
 ## Confirmation Gates
 
 Preserve these gates in dbt-wizard:
+- Any skill that needs to inspect warehouse schemas/tables, verify physical table existence, profile source data, run investigative SQL, or run dbt commands that query the warehouse must ask the user first:
+  > "Can I read your database schema tables?"
+  Continue only after the user confirms.
 - `modify-requirements` must not edit the KPI Framework until the user confirms the proposed KPI Framework patch.
 - `dbt-edit-plan` must not edit SQL, macros, source YAML, dbt `.yml`, `dbt_plan.md`, `er_diagram.md`, or Data Dictionary artifacts until the user confirms the dbt edit plan.
 - `github-delivery` must not commit, push, or open a PR until the user confirms.

@@ -1,18 +1,14 @@
-# Dalgo Consulting — Claude Code Guide
+# Dalgo Consulting - Claude Code Guide
 
-This repo contains the AI-assisted consulting workflow for building dbt data models that transform raw NGO program data into M&E metrics. Engagements move through four phases: **Discovery → Data Exploration → Framework → Model Development**.
+This repo contains the AI-assisted consulting workflow for building dbt data models that transform raw NGO program data into M&E metrics and Dalgo dashboards. Engagements move through four phases: **Discovery -> Data Exploration -> Framework -> Model Development**.
 
 See `docs/process.md` for the full process reference.
 
----
-
 ## What This Repo Is
 
-- **Not** a product codebase — there is no app to run or deploy here.
-- **Yes** a workspace for LLM-assisted consulting: generating artifacts, writing dbt SQL, exploring raw data, and managing the engagement lifecycle.
-- Client dbt project repos are symlinked or referenced separately; models may live inside those repos, not here.
-
----
+- **Not** a product codebase. There is no app to run or deploy here.
+- **Yes** a workspace for LLM-assisted consulting: generating artifacts, writing dbt SQL/YAML, exploring raw data, and managing the engagement lifecycle.
+- Client dbt project repos are referenced separately. Models may live inside those repos, not here.
 
 ## Repo Structure
 
@@ -21,8 +17,15 @@ dalgo-consulting/
 ├── .claude/
 │   ├── agents/
 │   └── skills/
+│       ├── 00-router/
+│       ├── 01-discovery/
+│       ├── 02-exploration/
+│       ├── 03-framework/
+│       ├── 04-implementation/
+│       ├── 05-change-management/
+│       └── 06-delivery/
 ├── secrets/
-│   └── my_service_key.json       ← Google service account key (gitignored)
+│   └── my_service_key.json
 ├── docs/
 │   ├── process.md
 │   └── artifact-design-plan.md
@@ -33,7 +36,7 @@ dalgo-consulting/
 └── workdocs/consulting/
     └── {engagement}/
         ├── discovery/
-        │   └── me_goals.md        ← LLM-generated; shared context for ALL downstream phases
+        │   └── me_goals.md
         ├── data_exploration/
         │   └── sources.yml
         ├── framework/
@@ -42,7 +45,7 @@ dalgo-consulting/
         │   ├── dbt_plan.md
         │   ├── er_diagram.md
         │   └── phase3_metadata.json
-        ├── models/                ← or inside the client's dbt repo
+        ├── models/
         │   ├── data_dictionary.md
         │   ├── data_dictionary.json
         │   ├── phase4_metadata.json
@@ -53,79 +56,74 @@ dalgo-consulting/
         └── investigations/
 ```
 
----
+## Execution Surface
 
-## Two Tracks
+dbt-wizard is the consultant execution surface. It discovers workflow instructions from `.claude/skills/**/SKILL.md`; all workflow logic must live in skills. Slash commands are deprecated and should not be restored.
 
-**New Engagement** — full four-phase process for a new client or program.
-**Modification** — lightweight path for existing clients adding or changing metrics.
+Start broad user requests with `dalgo-consulting-workflow`. Invoke focused skills directly only when the user names a specific phase or task.
 
-Always check which track applies before starting work. Modification is the default for live clients.
+## Skill Organization
 
----
+| Folder | Skills |
+|---|---|
+| `00-router` | `dalgo-consulting-workflow` |
+| `01-discovery` | `discover-engagement`, `read-requirements` |
+| `02-exploration` | `explore-data`, `validate-warehouse-access` |
+| `03-framework` | `build-kpi-framework`, `read-kpi-framework`, `plan-dbt-architecture`, `generate-er-diagram` |
+| `04-implementation` | `read-phase-context`, `write-dbt-staging`, `write-dbt-intermediate`, `write-dbt-marts`, `generate-data-dictionary` |
+| `05-change-management` | `modify-requirements`, `apply-kpi-framework-patch`, `investigate-issue`, `dbt-edit-plan` |
+| `06-delivery` | `finalize-dbt-project`, `github-delivery` |
 
-## Skills
+## Core Skills
 
-dbt-wizard is the consultant execution surface. It reads `.claude/skills/`, so all workflow logic must live in skills.
+| Skill | What It Does |
+|---|---|
+| `dalgo-consulting-workflow` | Master router for new engagements, phase reruns, requirement changes, investigations, implementation, finalization, and GitHub delivery. |
+| `discover-engagement` | Creates engagement folders, captures repo/sheet context, and calls `read-requirements` to generate `me_goals.md`. |
+| `read-requirements` | Reads the four-tab Requirements Sheet via Google Sheets API and generates or refreshes `me_goals.md`. |
+| `explore-data` | Profiles warehouse tables from one or more source YAMLs, respects PII flags, and enriches those same YAMLs in place. |
+| `validate-warehouse-access` | Shared tunnel/profile/dbt connectivity validation for warehouse-backed skills. |
+| `build-kpi-framework` | Builds the KPI Framework Sheet and local Markdown/JSON artifacts from `me_goals.md` and enriched source YAMLs. |
+| `read-kpi-framework` | Refreshes local `kpi_framework.md` and `kpi_framework.json` from the KPI Framework Sheet. |
+| `plan-dbt-architecture` | Writes `dbt_plan.md` for dashboards, metrics, charts, alerts, filters, drilldowns, and dbt model layers. |
+| `generate-er-diagram` | Writes `er_diagram.md` with valid Mermaid entity syntax and join paths aligned to the dbt plan. |
+| `read-phase-context` | Resolves accepted Phase 3 artifacts and dbt repo context for implementation skills. |
+| `write-dbt-staging` | Writes `stg_*.sql` and dbt YAML for source-aligned cleaning, casting, deduplication, and null handling. |
+| `write-dbt-intermediate` | Writes `int_*.sql` and dbt YAML for joins, cohorts, derived fields, and intermediate reshaping. |
+| `write-dbt-marts` | Writes chart-ready `marts_*.sql` and dbt YAML for Dalgo dashboards, charts, filters, drilldowns, and alerts. |
+| `generate-data-dictionary` | Produces the client-facing Data Dictionary Sheet plus local Markdown/JSON copies. |
+| `finalize-dbt-project` | Runs final dbt validation, SQLFluff checks when available, YAML documentation/test review, and dbt docs generation. |
+| `modify-requirements` | Handles requirement changes and proposes KPI Framework edits before invoking `dbt-edit-plan`. |
+| `apply-kpi-framework-patch` | Applies a confirmed KPI Framework patch and refreshes local framework artifacts. |
+| `investigate-issue` | Diagnoses wrong numbers, duplicates, freshness issues, and dashboard discrepancies; writes findings and every SQL query run. |
+| `dbt-edit-plan` | Produces a scoped dbt edit plan and implements SQL/YAML changes only after explicit confirmation. |
+| `github-delivery` | Confirms scope, commits, pushes, and optionally opens a PR for GitHub-backed dbt repos. |
 
-| Skill | Phase | What It Does |
-|---------|-------|-------------|
-| `dalgo-consulting-workflow` | Router | Routes full phase/workflow requests to the right skills |
-| `discover-engagement` | Discovery | Interactive setup wizard — collects engagement details, creates folder structure, reads Requirements Sheet, generates `me_goals.md` |
-| `explore-data` | Data Exploration | Profiles raw tables across one or more passed `source.yml` / `sources.yml` files, prompts for SSH tunnel readiness, respects pre-marked PII, infers additional likely PII, and rewrites the same YAML files using `me_goals.md` for context |
-| `build-kpi-framework` | Framework | Builds or updates the multi-tab KPI Framework Sheet from `me_goals.md` + enriched source YAMLs, then saves `kpi_framework.md` and `kpi_framework.json` |
-| `plan-dbt-architecture` | Framework | Builds `dbt_plan.md` for Dalgo dashboards, metrics, charts, alerts, filters, drilldowns, and dbt model layers |
-| `generate-er-diagram` | Framework | Designs entity model from KPI Framework + `dbt_plan.md` → `er_diagram.md` |
-| `modify-requirements` | Modification | Handles requirement changes for existing engagements, updates KPI Framework only after confirmation, then invokes `dbt-edit-plan` |
-| `investigate-issue` | Diagnostics | Diagnoses wrong numbers, duplicates, freshness issues, and dashboard discrepancies with warehouse queries and reproducible findings |
-| `dbt-edit-plan` | Modification | Plans scoped dbt edits and implements only after explicit code-edit confirmation |
-| `write-dbt-staging` | Model Dev | Writes `stg_*.sql` models |
-| `write-dbt-intermediate` | Model Dev | Writes `int_*.sql` models |
-| `write-dbt-marts` | Model Dev | Writes chart-ready `marts_*.sql` models for Dalgo outputs |
-| `generate-data-dictionary` | Model Dev | Produces Data Dictionary Sheet for client handoff |
-| `finalize-dbt-project` | Finalization | dbt validation + SQLFluff lint + dbt YAML documentation/test review + dbt docs generation |
+## Tracks
 
----
+**New engagement:** `dalgo-consulting-workflow` -> `discover-engagement` -> `explore-data` -> `build-kpi-framework` -> `plan-dbt-architecture` -> `generate-er-diagram` -> `write-dbt-staging` -> `write-dbt-intermediate` -> `write-dbt-marts` -> `generate-data-dictionary` -> `finalize-dbt-project`.
 
-## Agents
+**Requirement change:** use `modify-requirements`. It writes a durable change folder, proposes KPI Framework changes only when needed, asks for confirmation before sheet edits, then routes dbt changes through `dbt-edit-plan`.
 
-- **ngo-data-platform-consultant** — evaluates outputs as "Priya", a non-technical NGO program manager. Use to gut-check language, complexity, and client-facing artifacts.
-- **dbt-engineer** — writes and reviews dbt SQL across staging, intermediate, and mart layers.
-
----
-
-## Skills
-
-- **read-requirements** — reads all tabs from the Requirements Sheet (Google Sheets API) and generates `me_goals.md`. Called by `discover-engagement`; also usable standalone to refresh `me_goals.md` mid-engagement.
-- **read-kpi-framework** — reads all tabs from the KPI Framework Sheet and writes normalized `kpi_framework.md` and `kpi_framework.json`. Called by `build-kpi-framework`, `plan-dbt-architecture`, and `generate-er-diagram`.
-- **read-phase-context** — resolves and reads accepted Phase 3 artifacts, source YAMLs, dbt repo context, and metadata for Phase 4 skills.
-- **dbt-edit-plan** — plans scoped dbt edits and implements only after explicit confirmation.
-- **investigate-issue** — diagnoses dashboard/KPI/data-quality issues and writes reproducible investigation findings plus SQL.
-- **validate-warehouse-access** — shared dbt profile, tunnel, and `dbt debug` validation.
-- **apply-kpi-framework-patch** — applies confirmed KPI Framework patches and refreshes local artifacts.
-- **github-delivery** — explicit commit, push, and PR confirmation gate.
-
----
+**Model/dashboard bug:** use `investigate-issue`. It validates warehouse access, writes reproducible SQL in `queries.sql`, and either recommends a fix or reports inconclusive findings. Code changes still go through `dbt-edit-plan`.
 
 ## Key Constraints
 
-- **KPI Framework is the contract** — no dbt model is written without a corresponding KPI row in the Framework Sheet.
-- **Analytics outputs are part of the contract** — dashboards, charts, filters, drilldowns, and alerts must be captured in the KPI Framework before the dbt plan is finalized.
-- **Marts are chart-ready, not facts/dimensions by default** — final models use `marts_` naming and are shaped around Dalgo output requirements.
-- **Requirement changes and bugs use different paths** — use `modify-requirements` for analytics contract changes, and `investigate-issue` for wrong numbers, duplicates, freshness, or dashboard discrepancies.
-- **No unconfirmed edits** — `modify-requirements` asks before writing KPI Framework changes, and `dbt-edit-plan` asks before editing dbt code/YAML.
-- **GitHub delivery is explicit** — when a dbt repo has a GitHub remote, `dbt-edit-plan` and `finalize-dbt-project` ask before committing, pushing, or opening a PR.
-- **Data exploration before framework authoring** — raw table shape must be understood before the KPI Framework is built.
-- **Layer-by-layer verification** — run and validate each dbt layer before writing the next.
-- **Never expose credentials** — skills may read dbt profiles and environment variables for connectivity, but must never print raw profile files, usernames, passwords, tokens, private keys, or resolved secret values.
-- **Do not expose PII in artifacts** — `explore-data` must respect consultant-marked PII columns, avoid querying raw values from them during analysis, and never store sample values for columns marked PII.
-- **Preserve source YAML structure** — `source.yml` / `sources.yml` may vary across client repos; generated metadata must be merged into the existing YAML without dropping user-authored dbt fields.
-- **NGO data is often messy** — paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. Staging models must be defensive. Document assumptions explicitly.
-- **Finalization is mandatory** — dbt validation, SQLFluff, dbt YAML documentation/test review, and dbt docs generation before every delivery, for both tracks.
-- **Delivery is PR-based** — consulting changes ship on a dedicated branch, never direct-pushed to main.
-
----
+- KPI Framework is the contract. No dbt model should be written without a corresponding KPI, dashboard, chart, filter, drilldown, or alert requirement.
+- Chart type belongs in the visual/output rows, not only in the KPI row.
+- Marts are chart-ready, not facts/dimensions by default. Final models use `marts_` naming and are shaped around Dalgo output requirements.
+- Valid KPI Framework statuses are `active`, `revised`, `deprecated`, and `needs_client_input`.
+- `modify-requirements` must not edit the KPI Framework until the user confirms the patch.
+- `dbt-edit-plan` must not edit dbt SQL/YAML until the user confirms the plan.
+- Any skill that needs to inspect warehouse schemas/tables, verify physical tables, profile source data, run investigative SQL, or run dbt commands that query the warehouse must first ask exactly: `Can I read your database schema tables?`
+- `dbt-edit-plan` must update `dbt_plan.md` after implementation when architecture changes.
+- Data Dictionary updates are required when exposed models or columns change.
+- Warehouse-backed skills must validate profile/tunnel access before querying and must never print credentials, tokens, passwords, private keys, or resolved secret values.
+- Investigation artifacts must include the SQL that was run.
+- PII must not be exposed in artifacts. Do not store raw sensitive values.
+- Finalization is mandatory before every delivery.
+- GitHub delivery is explicit and PR-based for client repos.
 
 ## Users
 
-The end clients are NGO M&E managers and program staff — non-technical users who filled in a Requirements Sheet in plain English. All client-facing artifacts (KPI Framework Sheet, Data Dictionary Sheet, `me_goals.md`) must be written for this audience: no SQL, no jargon, no unexplained acronyms.
+The end clients are NGO M&E managers and program staff. Client-facing artifacts such as the KPI Framework Sheet, Data Dictionary Sheet, and `me_goals.md` must be written in plain English: no SQL, no unexplained acronyms, and no implementation jargon unless the artifact is explicitly technical.

@@ -51,6 +51,12 @@ Store:
 
 ## Step 1 — Confirm SSH Tunnel Readiness
 
+Before any warehouse-backed action, ask the user exactly:
+> "Can I read your database schema tables?"
+
+Continue only after the user confirms. If the user declines or does not answer, stop before profile validation, table existence checks, source declaration verification, or profiling queries.
+Store `{warehouse_read_confirmed} = true` and pass it to `validate-warehouse-access`.
+
 Prompt the user before any warehouse work starts:
 > "Before the `explore-data` skill continues, make sure any required SSH tunnel is already running in another terminal tab. What local port is the tunnel using? Press Enter for `5432`, or type `none` if no tunnel is needed."
 
@@ -120,7 +126,7 @@ Store:
 
 ## Step 4 — Resolve The Profile And Verify Connectivity
 
-Invoke the `validate-warehouse-access` skill with `{dbt_repo_path}` and `{tunnel_port}`. Use the returned safe connection context for all profiling queries.
+Invoke the `validate-warehouse-access` skill with `{dbt_repo_path}`, `{tunnel_port}`, and `{warehouse_read_confirmed}`. Use the returned safe connection context for all profiling queries.
 
 Find the profile configuration in this order:
 

@@ -45,7 +45,13 @@ Store paths:
 
 ## Step 3 — Verify Warehouse Access
 
-Invoke the `validate-warehouse-access` skill with `{dbt_repo_path}` before running investigative SQL.
+Before any warehouse-backed diagnostic action, ask the user exactly:
+> "Can I read your database schema tables?"
+
+Continue only after the user confirms. If the user declines or does not answer, stop before warehouse access validation or investigative SQL, and write the blocker to `investigation.md`.
+Store `{warehouse_read_confirmed} = true` and pass it to `validate-warehouse-access`.
+
+Invoke the `validate-warehouse-access` skill with `{dbt_repo_path}` and `{warehouse_read_confirmed}` before running investigative SQL.
 
 The warehouse access pattern is the same one used by the `explore-data` skill:
 - Ask the user to confirm any required SSH tunnel is running and capture the local port.

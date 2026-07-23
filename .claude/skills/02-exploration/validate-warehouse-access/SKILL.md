@@ -14,24 +14,28 @@ Use this skill whenever a Dalgo workflow needs to query the warehouse or run dbt
 - `{profiles_dir}` — optional explicit profiles directory
 - `{tunnel_port}` — optional local tunnel port; default `5432`
 - `{allow_no_tunnel}` — optional boolean when the warehouse is not reached through a local tunnel
+- `{warehouse_read_confirmed}` — optional boolean from a caller that already asked the required warehouse-read question during the same skill run
 
 ## Steps
 
-1. Ask the user to confirm any required SSH tunnel is running and capture the local port. Use `5432` as the default; allow `none` when no tunnel is needed.
-2. Resolve the dbt profile file in this order:
+1. Before reading warehouse schemas/tables, validating physical table access, running schema introspection, or running dbt commands that query the warehouse, confirm `{warehouse_read_confirmed}` is true. If it is not already true, ask the user exactly:
+   > "Can I read your database schema tables?"
+   Continue only after the user confirms, then set `{warehouse_read_confirmed} = true`. If the user declines or does not answer, stop and report that warehouse access was not approved.
+2. Ask the user to confirm any required SSH tunnel is running and capture the local port. Use `5432` as the default; allow `none` when no tunnel is needed.
+3. Resolve the dbt profile file in this order:
    - `{dbt_repo_path}/profiles.yml`
    - `{dbt_repo_path}/profiles.yaml`
    - `~/.dbt/profiles.yml`
-3. Read the dbt profile name from `{dbt_repo_path}/dbt_project.yml`.
-4. Resolve the active target and required environment variables.
-5. Run:
+4. Read the dbt profile name from `{dbt_repo_path}/dbt_project.yml`.
+5. Resolve the active target and required environment variables.
+6. Run:
 
 ```bash
 dbt debug --project-dir "{dbt_repo_path}" --profiles-dir "{profiles_dir}" --log-path "/tmp/dalgo-dbt-debug-logs"
 ```
 
-6. Confirm the active adapter is Postgres-compatible for v1.
-7. Return safe connection context to the caller:
+7. Confirm the active adapter is Postgres-compatible for v1.
+8. Return safe connection context to the caller:
    - profile name
    - target name
    - adapter type

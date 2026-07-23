@@ -75,6 +75,11 @@ Write the YAML files directly as part of this skill; do not leave documentation/
 
 ## Step 4 — Run And Verify
 
+Before running dbt commands or warehouse validation queries, ask the user exactly:
+> "Can I read your database schema tables?"
+
+Continue only after the user confirms. If the user declines or does not answer, stop before `dbt run` or any warehouse-backed row-count/null-rate checks and report staging validation as blocked.
+
 Run:
 
 ```bash

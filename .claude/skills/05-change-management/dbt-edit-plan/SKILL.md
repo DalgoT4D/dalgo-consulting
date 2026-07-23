@@ -116,6 +116,11 @@ If columns/models exposed to the client change, invoke the `generate-data-dictio
 
 ## Step 7 — Validate
 
+Before running dbt commands or warehouse validation queries, ask the user exactly:
+> "Can I read your database schema tables?"
+
+Continue only after the user confirms. If the user declines or does not answer, stop before dbt execution or warehouse-backed validation and record validation as blocked.
+
 Run the affected dbt selectors from the validation plan.
 
 Use the narrowest selector that verifies the change unless finalization is requested.

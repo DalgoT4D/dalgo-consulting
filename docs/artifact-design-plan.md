@@ -20,7 +20,7 @@ See [process.md](process.md) for the full workflow reference.
 | Artifact | Format | What needs to be designed |
 |---|---|---|
 | `source.yml` / `sources.yml` (input) | YAML | One or more flexible YAML files that the consultant creates before the LLM runs, or existing dbt source YAMLs the consultant chooses to pass directly. They may include `version`, existing dbt `tests` / `meta` / `tags`, optional `identifier`, partial `columns` blocks, and explicit `pii` flags for consultant-marked sensitive columns. |
-| `source.yml` / `sources.yml` (output) | YAML | The same YAML files, enriched in place by the LLM. They preserve user-authored dbt fields, preserve explicit PII markings, add generated profiling fields such as table row counts, candidate primary/join keys, date columns, anomalies, LLM notes, and column-level data types, null rates, cardinality, inferred PII flags, date-format notes, and sample values for columns not marked PII. |
+| `source.yml` / `sources.yml` (output) | YAML | The same YAML files, enriched in place by the LLM after the user confirms `Can I read your database schema tables?`. They preserve user-authored dbt fields, preserve explicit PII markings, add generated profiling fields such as table row counts, candidate primary/join keys, date columns, anomalies, LLM notes, and column-level data types, null rates, cardinality, inferred PII flags, date-format notes, and sample values for columns not marked PII. |
 
 ---
 
@@ -60,7 +60,7 @@ See [process.md](process.md) for the full workflow reference.
 | `dbt_edit_plan.md` | Markdown | Scoped plan for dbt edits: files to edit, files not to touch, layer impact, planned SQL/YAML/macro changes, architecture updates, Data Dictionary impact, validation steps, risks, and implementation checklist. |
 | `modification_metadata.json` | JSON | Status and audit metadata for a modification: plan path, confirmation state, files edited, validation steps run, Data Dictionary refresh status, and whether `dbt_plan.md` / `er_diagram.md` changed. |
 | `investigation.md` | Markdown | Diagnostic report for wrong numbers, duplicates, freshness problems, or dashboard discrepancies. Includes issue, context, queries run, findings, likely cause, suggested fix, confidence, inconclusive results, and next step. |
-| `queries.sql` | SQL | Reproducible SQL log for every warehouse query executed during `investigate-issue`, with comments explaining query purpose and no raw PII values in comments. |
+| `queries.sql` | SQL | Reproducible SQL log for every warehouse query executed during `investigate-issue` after the user confirms `Can I read your database schema tables?`, with comments explaining query purpose and no raw PII values in comments. |
 | `investigation_metadata.json` | JSON | Status and audit metadata for an investigation: cause_found/inconclusive/blocked, affected KPIs/models, output paths, and recommended next step. |
 
 ---
