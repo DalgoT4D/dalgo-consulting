@@ -1,16 +1,21 @@
-# /explore_data — Raw Warehouse Exploration
+---
+name: explore-data
+description: "Run Phase 2 raw warehouse exploration for one or more dbt source YAML files: validate warehouse access, profile source tables, detect missing source declarations, protect PII, and enrich the same YAML files in place."
+---
+
+# Explore Data
 
 Profiles the raw tables listed across one or more passed `source.yml` or `sources.yml` files and enriches those same YAML files in place.
-Use this after `/discover`, once the raw data has been ingested and the consultant is ready to understand the real warehouse shape before KPI design.
+Use this after the `discover-engagement` skill, once the raw data has been ingested and the consultant is ready to understand the real warehouse shape before KPI design.
 
-Treat the text after `/explore_data` as one or more candidate paths to YAML files.
+Treat the skill input as one or more candidate paths to YAML files.
 Run through each step in order. Do not skip validation. Stop immediately on blocking errors instead of guessing.
 
 ---
 
 ## Step 0 — Resolve And Validate The Source YAML Inputs
 
-If the user passed one or more paths after `/explore_data`, treat them as `{sources_paths}`.
+If the caller provided one or more paths, treat them as `{sources_paths}`.
 
 If no path was provided, ask:
 > "What are the paths to the `source.yml` / `sources.yml` files you want to enrich?"
@@ -46,8 +51,14 @@ Store:
 
 ## Step 1 — Confirm SSH Tunnel Readiness
 
+Before any warehouse-backed action, ask the user exactly:
+> "Can I read your database schema tables?"
+
+Continue only after the user confirms. If the user declines or does not answer, stop before profile validation, table existence checks, source declaration verification, or profiling queries.
+Store `{warehouse_read_confirmed} = true` and pass it to `validate-warehouse-access`.
+
 Prompt the user before any warehouse work starts:
-> "Before `/explore_data` continues, make sure any required SSH tunnel is already running in another terminal tab. What local port is the tunnel using? Press Enter for `5432`, or type `none` if no tunnel is needed."
+> "Before the `explore-data` skill continues, make sure any required SSH tunnel is already running in another terminal tab. What local port is the tunnel using? Press Enter for `5432`, or type `none` if no tunnel is needed."
 
 If the user indicates the tunnel is not running yet:
 > "Start the tunnel in another tab, then type `done` to continue. If the tunnel uses a non-default local port, include that port as well."
@@ -92,7 +103,7 @@ Store:
 
 ## Step 3 — Resolve The dbt Repo
 
-Prefer the dbt repo path recorded by `/discover`.
+Prefer the dbt repo path recorded by the `discover-engagement` skill.
 
 1. Look for the footer line in `{me_goals_contents}`:
    `dbt repo: ...`
@@ -115,6 +126,8 @@ Store:
 
 ## Step 4 — Resolve The Profile And Verify Connectivity
 
+Invoke the `validate-warehouse-access` skill with `{dbt_repo_path}`, `{tunnel_port}`, and `{warehouse_read_confirmed}`. Use the returned safe connection context for all profiling queries.
+
 Find the profile configuration in this order:
 
 1. `{dbt_repo_path}/profiles.yml`
@@ -131,10 +144,16 @@ Read:
 If the profile uses environment variables, resolve them from the current shell environment before continuing.
 If required variables are missing, stop and list them explicitly.
 
+Credential handling is strict:
+- Never print, copy, or summarize raw `profiles.yml` / `profiles.yaml` contents.
+- Never print resolved passwords, tokens, private keys, usernames, or environment variable values.
+- If reporting connection context, show only the profile name, target name, adapter type, database, schema, and redacted host/port as needed.
+- If an error message includes credentials, redact it before showing it to the user or writing artifacts.
+
 If the resolved warehouse host is local (`localhost`, `127.0.0.1`, or equivalent) and `{tunnel_port}` is not `none`:
 - compare the resolved profile port with `{tunnel_port}`
 - if they do not match, stop and show the mismatch clearly
-- tell the user to align the running tunnel and the dbt profile/env vars before re-running `/explore_data`
+- tell the user to align the running tunnel and the dbt profile/env vars before re-running the `explore-data` skill
 
 Run:
 
@@ -148,10 +167,10 @@ dbt debug \
 If `dbt debug` fails, stop immediately and show:
 - the failing repo path
 - the profile file used
-- the likely next action: fix tunnel / SSH / network / credentials, then re-run `/explore_data`
+- the likely next action: fix tunnel / SSH / network / credentials, then re-run the `explore-data` skill
 
 For warehouse queries, use the active profile target to build a `psql` connection.
-The current Dalgo setup is expected to be Postgres-backed. If the active adapter is not Postgres-compatible, stop and tell the user v1 of `/explore_data` currently supports Postgres-backed repos only.
+The current Dalgo setup is expected to be Postgres-backed. If the active adapter is not Postgres-compatible, stop and tell the user v1 of the `explore-data` skill currently supports Postgres-backed repos only.
 
 Store:
 - `{profiles_path}`
@@ -162,12 +181,39 @@ Store:
 
 ---
 
-## Step 5 — Profile Each Source Table
+## Step 5 — Detect Missing Source Declarations From Existing dbt SQL
+
+If `{dbt_repo_path}` contains existing dbt models, scan SQL files under `models/` for dbt source references:
+
+```text
+source('source_name', 'table_name')
+source("source_name", "table_name")
+```
+
+Compare those references with the loaded `{sources_yamls}`.
+
+For each referenced source/table pair that is missing from the YAML:
+- If the source name exists in one of the loaded YAML files, use that source's schema and database settings.
+- If the source name does not exist but there is exactly one loaded source with a schema matching the likely raw schema in `me_goals.md`, ask the user before mapping it.
+- Verify the physical table exists in the warehouse before adding it.
+- If the physical table exists, add it to the profiling set and mark it as a missing dbt source declaration that will be written back into the same YAML.
+- If the physical table does not exist, stop and report the missing table exactly.
+
+This step is required when working with an existing dbt repo. A stale or incomplete `sources.yml` must be corrected before downstream dbt parsing/modeling can succeed.
+
+Store:
+- `{missing_source_declarations}`
+
+---
+
+## Step 6 — Profile Each Source Table
 
 For each YAML file in `{sources_yamls}`:
 - iterate through each source in that file's `sources` collection
 - read the source-level `schema`
 - respect an explicit `database` if present
+
+Also include every verified table from `{missing_source_declarations}` in the profiling set.
 
 For each table:
 - use `identifier` when present; otherwise use `name`
@@ -256,7 +302,7 @@ Use these guidelines when generating table-level outputs:
 
 ---
 
-## Step 6 — Merge Enrichment Back Into The Same YAML
+## Step 7 — Merge Enrichment Back Into The Same YAML
 
 Rewrite every file in `{sources_paths}` in place.
 
@@ -264,6 +310,7 @@ Merge rules:
 - Preserve all existing user-authored keys at root, source, table, and column level.
 - Never overwrite existing `description`, `tests`, `meta`, `tags`, or unknown custom keys.
 - Update only generated fields.
+- Add verified missing source declarations from existing dbt SQL to the most appropriate loaded YAML file.
 - If a table already has a `columns` list, match existing columns by exact `name`.
 - If a warehouse column is missing from the YAML, add it in warehouse ordinal order.
 - If a previous run left generated fields, replace them with fresh values rather than duplicating them.
@@ -293,11 +340,11 @@ Reformatting the YAML is acceptable.
 Dropping user-authored content is not.
 
 If structured editing is easier, use an inline `python3 -c` snippet or direct file editing.
-Do not create a reusable helper script for this command.
+Do not create a reusable helper script for this skill.
 
 ---
 
-## Step 7 — Completion Summary
+## Step 8 — Completion Summary
 
 Print a completion summary:
 
@@ -307,6 +354,7 @@ Print a completion summary:
 ✓ profile file:     {profiles_path}
 ✓ tunnel port:      {tunnel_port}
 ✓ source YAML files: {sources_paths}
+✓ source declarations added: {missing_source_declarations}
 ✓ source files:     {sources_file_count}
 ✓ sources profiled: {source_count}
 ✓ tables profiled:  {table_count}
@@ -314,4 +362,4 @@ Print a completion summary:
 
 Then print:
 - "Review the inferred PII flags and data-quality notes in the enriched YAML files."
-- "Next → run `/curate_metrics` using `me_goals.md` and the enriched source YAML files."
+- "Next → run the `build-kpi-framework` skill using `me_goals.md` and the enriched source YAML files."

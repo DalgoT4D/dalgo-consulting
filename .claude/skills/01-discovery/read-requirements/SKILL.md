@@ -1,13 +1,13 @@
 ---
-name: read_requirements
-description: Read all tabs from a consulting Requirements Sheet (Google Sheet) and generate me_goals.md — the shared context document for all downstream consulting phases. Invoked by /discover and any skill that needs fresh Requirements Sheet data.
+name: read-requirements
+description: "Read all tabs from a consulting Requirements Sheet (Google Sheet) and generate me_goals.md — the shared context document for all downstream consulting phases. Invoked by the `discover-engagement` skill and any skill that needs fresh Requirements Sheet data."
 ---
 
 # Read Requirements Sheet
 
 Read the Requirements Sheet and synthesise `me_goals.md` for the engagement.
 
-## Inputs (passed from the calling command)
+## Inputs (passed from the calling skill)
 
 - `{spreadsheet_id}` — Google Sheet ID extracted from the sheet URL
 - `{sheet_url}` — Full URL of the Requirements Sheet

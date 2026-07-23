@@ -1,4 +1,9 @@
-# /discover — Consulting Engagement Setup
+---
+name: discover-engagement
+description: "Run Phase 1 discovery for a Dalgo consulting engagement: collect engagement context, validate the dbt repo and Google service account, create workdocs folders, read the Requirements Sheet, and generate me_goals.md."
+---
+
+# Discover Engagement
 
 Step-by-step setup wizard for a new engagement or modification. Works for both tracks.
 Run through each step in order. Do not skip steps. Pause at each input prompt and wait for the user's response before continuing.
@@ -63,6 +68,9 @@ Create the following directory structure:
 workdocs/consulting/{engagement}/
 ├── discovery/
 ├── data_exploration/
+├── framework/
+├── modifications/
+├── investigations/
 └── models/
 ```
 Confirm to the user that the folders have been created.
@@ -94,7 +102,7 @@ Store as `{spreadsheet_id}` and `{sheet_url}`.
 
 ## Step 6 — Read Requirements Sheet & Generate me_goals.md
 
-Invoke the `/read_requirements` skill, passing:
+Invoke the `read-requirements` skill, passing:
 - `{spreadsheet_id}`
 - `{sheet_url}`
 - `{engagement}` (folder slug)
@@ -120,5 +128,5 @@ Print a completion summary:
 ```
 
 Then print the next step guidance:
-- **new engagement:** "Next → ingest raw data via Airbyte for all sources listed in me_goals.md, then run `/explore_data path/to/source.yml [path/to/other_source.yml ...]`."
-- **modification:** "Next → review `me_goals.md` for updated context, then run `/curate_metrics`."
+- **new engagement:** "Next → ingest raw data via Airbyte for all sources listed in me_goals.md, then run the `explore-data` skill with `path/to/source.yml [path/to/other_source.yml ...]`."
+- **modification:** "Next → review `me_goals.md` for updated context, then run the `build-kpi-framework` skill with `path/to/source.yml [path/to/other_source.yml ...]`."
