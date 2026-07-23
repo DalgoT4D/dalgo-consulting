@@ -52,11 +52,11 @@ flowchart TD
 flowchart TD
     A([Change Request]) --> B[Identify scope:\nnew KPI / revised logic / new data source]
     B --> C{Requirement change\nor bug?}
-    C -- Requirement change --> D[Run /modify]
-    C -- Bug or discrepancy --> E[Run /investigate]
+    C -- Requirement change --> D[Run modify-requirements]
+    C -- Bug or discrepancy --> E[Run investigate-issue]
     E --> F{Fix identified?}
     F -- No --> G[Return findings / ask for input]
-    F -- Yes --> H[Run /dbt_edit_plan]
+    F -- Yes --> H[Run dbt-edit-plan]
     D --> I{KPI Framework\nchange needed?}
     I -- Yes --> J[Confirm + update KPI Framework Sheet]
     I -- No --> H
@@ -97,7 +97,7 @@ flowchart TD
    - The consultant adds annotations in the "Consultant Notes" column of the Metrics tab as the client fills it.
    - This workbook is updated in-place throughout the engagement — it is never recreated.
 
-3. **Generate `me_goals.md`** (`/discover`)
+3. **Generate `me_goals.md`** (`discover-engagement`)
    - After the client has filled the Metrics tab, the LLM reads all tabs of the Requirements Sheet and synthesises a structured summary.
    - Input: Requirements Sheet (all tabs — Engagement Context, Data Sources, Metrics)
    - Output: `me_goals.md` — the shared context document for all downstream phases. Every subsequent skill reads this file as its primary input before doing any work.
@@ -121,7 +121,7 @@ flowchart TD
    - Data sources (KoboToolbox, Google Sheets, ODK, CRMs, etc.) are ingested via Airbyte into raw tables in the warehouse by the consultant.
    - Confirm the source systems referenced in the Requirements Sheet are actually available.
 
-4. **Explore Raw Table Structure** (`/explore_data`)
+4. **Explore Raw Table Structure** (`explore-data`)
    - For each raw table, query to understand:
      - Column names and data types
      - Null rates and cardinality for key columns
@@ -129,7 +129,7 @@ flowchart TD
      - Join keys (IDs linking tables)
      - Date/time fields and formats
      - Anomalies, duplicates, encoding issues
-   - The command accepts one or more consultant-authored `source.yml` / `sources.yml` working files, or existing dbt source YAMLs from the dbt repo.
+   - The skill accepts one or more consultant-authored `source.yml` / `sources.yml` working files, or existing dbt source YAMLs from the dbt repo.
    - When run against an existing dbt repo, it also scans current dbt SQL for missing `source()` declarations and adds verified warehouse tables back into the enriched source YAML.
    - At the start, it reminds the consultant to ensure any required SSH tunnel is already running and captures the local tunnel port before warehouse validation.
    - It may read dbt profile files and resolved environment variables only for connectivity validation. It must never print raw profile contents, usernames, passwords, tokens, private keys, or resolved secret values in chat or artifacts.
@@ -156,7 +156,7 @@ The Requirements Sheet is written by the client in program/M&E language. It capt
 
 The KPI Framework Sheet is built by the consultant in data/technical language. It captures implementation. It is written only after the raw table structure has been explored.
 
-The KPI Framework is not just a flat list of KPIs. It is the analytics contract for Dalgo outputs: metrics, dashboards, charts, filters, drilldowns, alerts, grains, and source mappings. This contract gives `/dbt_plan` enough structure to design dbt models that already contain the required analytics, instead of pushing calculation work into the dashboard layer.
+The KPI Framework is not just a flat list of KPIs. It is the analytics contract for Dalgo outputs: metrics, dashboards, charts, filters, drilldowns, alerts, grains, and source mappings. This contract gives `plan-dbt-architecture` enough structure to design dbt models that already contain the required analytics, instead of pushing calculation work into the dashboard layer.
 
 The same metric looks like this in each:
 
@@ -170,7 +170,7 @@ They are separate sheets because they have different audiences (client vs. data 
 
 ### Steps
 
-5. **Build the KPI Framework Sheet** (`/build_kpi_sheet`)
+5. **Build the KPI Framework Sheet** (`build-kpi-framework`)
    - Build a multi-tab KPI Framework Sheet that organizes the user requirements from `me_goals.md` against the explored data reality from enriched source YAMLs.
    - Tabs:
      - **KPI Catalog** — one row per KPI/metric, with definition, formula, numerator/denominator, source tables, required columns, filters, grain, time grain, breakdown dimensions, mart model, status, change request metadata, and open questions.
@@ -185,7 +185,7 @@ They are separate sheets because they have different audiences (client vs. data 
    - Input: `me_goals.md`, enriched `source.yml` / `sources.yml`
    - Output: KPI Framework Sheet (Google Sheet), `kpi_framework.md`, `kpi_framework.json`
 
-6. **Build DBT Architecture Plan** (`/dbt_plan`)
+6. **Build DBT Architecture Plan** (`plan-dbt-architecture`)
    - Use the KPI Framework Sheet and `me_goals.md`, analyze the requirements around what dashboards/metrics/charts/alerts/KPIs are needed to be built on Dalgo - and designs a plan for what dbt models are going to be built, and the flow of information around the models.
    - DBT Models will be structure in three layers:
       - **staging** - The layer right above the sources - the models here will clean, deduplicate, rename columns etc. A basic layer of cleaning and staging before downstream models get involved in more complex analysis. 
@@ -201,7 +201,7 @@ They are separate sheets because they have different audiences (client vs. data 
    - Input: `me_goals.md`, KPI Framework Sheet (Google Sheet), enriched `source.yml` / `sources.yml`
    - Output: `dbt_plan.md`
 
-7. **Design ER Diagram** (`/generate_er_diagram`)
+7. **Design ER Diagram** (`generate-er-diagram`)
    - Use the KPI Framework Sheet and `dbt_plan.md` to decide which entities, joins, and dbt model boundaries are needed.
    - Document: entities and grain, relationships and cardinalities, which raw tables map to which entities, and the join paths needed for each KPI.
    - Input: `me_goals.md`, KPI Framework Sheet / `kpi_framework.json`, `dbt_plan.md`, enriched `source.yml` / `sources.yml`
@@ -212,8 +212,8 @@ They are separate sheets because they have different audiences (client vs. data 
 | Artifact | Format | Owner | Purpose |
 |---|---|---|---|
 | KPI Framework Sheet | Google Sheet | Consultant | Multi-tab analytics contract for metrics, dashboards, charts, filters, drilldowns, alerts, grains, source mappings, and implementation questions. |
-| `kpi_framework.md` | Markdown | LLM | Local readable copy of the KPI Framework Sheet for downstream commands. |
-| `kpi_framework.json` | JSON | LLM | Local machine-readable copy of the KPI Framework Sheet for downstream commands and dbt wizard orchestration. |
+| `kpi_framework.md` | Markdown | LLM | Local readable copy of the KPI Framework Sheet for downstream skills. |
+| `kpi_framework.json` | JSON | LLM | Local machine-readable copy of the KPI Framework Sheet for downstream skills and dbt wizard orchestration. |
 | `dbt_plan.md` | Markdown | Consultant | A plan for the implementation and building of the dbt project, including model layers, dependencies, filter/drilldown support, alert support, macro candidates, validation, and open questions. |
 | `er_diagram.md` / `.png` | Markdown / Image | Consultant | Entity-relationship diagram derived from the KPI Framework and `dbt_plan.md`, used to shape dbt models. |
 ---
@@ -310,10 +310,10 @@ workdocs/consulting/{engagement}/
 ├── discovery/
 │   └── me_goals.md                ← LLM-generated from Requirements Sheet; shared context for all downstream phases
 ├── data_exploration/
-│   └── sources.yml                ← optional consultant working copy; /explore_data can also target a dbt repo source.yml directly
+│   └── sources.yml                ← optional consultant working copy; explore-data can also target a dbt repo source.yml directly
 ├── framework/
 │   ├── kpi_framework.md           ← local readable copy of KPI Framework Sheet
-│   ├── kpi_framework.json         ← machine-readable contract for commands and dbt wizard
+│   ├── kpi_framework.json         ← machine-readable contract for skills and dbt-wizard
 │   ├── dbt_plan.md                ← model architecture plan for Dalgo outputs
 │   ├── er_diagram.md              ← entity-relationship diagram
 │   └── phase3_metadata.json       ← sheet IDs, local artifact paths, source YAML paths
@@ -342,7 +342,7 @@ Google Sheets (linked from workdocs, not stored as files):
 └── Data Dictionary Sheet          ← generated at engagement close
 
 YAML (in dbt project):
-└── source.yml / sources.yml       ← one or more dbt source YAMLs that may be passed directly to /explore_data and enriched in place
+└── source.yml / sources.yml       ← one or more dbt source YAMLs that may be passed directly to explore-data and enriched in place
 ```
 
 ---
@@ -355,9 +355,9 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 
 **Steps:**
 1. Decide whether the request is a requirement change or a bug/discrepancy.
-2. For requirement changes, run `/modify`. It creates a durable change folder, drafts KPI Framework edits only if needed, asks for confirmation before writing the Google Sheet, then calls `/dbt_edit_plan`.
-3. For wrong numbers, duplicates, freshness issues, or dashboard discrepancies, run `/investigate`. It verifies warehouse access, writes every SQL query to `queries.sql`, and produces `investigation.md` with likely cause or inconclusive findings.
-4. If a model fix is needed, run `/dbt_edit_plan` directly or from `/modify` / `/investigate`. It writes a durable `dbt_edit_plan.md` and asks for confirmation before editing dbt SQL, macros, source YAMLs, or dbt `.yml` files.
+2. For requirement changes, run `modify-requirements`. It creates a durable change folder, drafts KPI Framework edits only if needed, asks for confirmation before writing the Google Sheet, then calls `dbt-edit-plan`.
+3. For wrong numbers, duplicates, freshness issues, or dashboard discrepancies, run `investigate-issue`. It verifies warehouse access, writes every SQL query to `queries.sql`, and produces `investigation.md` with likely cause or inconclusive findings.
+4. If a model fix is needed, run `dbt-edit-plan` directly or from `modify-requirements` / `investigate-issue`. It writes a durable `dbt_edit_plan.md` and asks for confirmation before editing dbt SQL, macros, source YAMLs, or dbt `.yml` files.
 5. If the change involves a new data source: ingest via Airbyte, explore the new tables, and update the relevant `source.yml` / `sources.yml`.
 6. If architecture changes, update `dbt_plan.md`. If relationships or join paths change, update `er_diagram.md`.
 7. Modify only affected dbt model layers; do not rebuild the full model set unless the scope requires it.
@@ -383,14 +383,14 @@ For clients already live on Dalgo who want to add or change metrics — no full 
 - **Data exploration comes before KPI Framework authoring:** Business intent is captured upfront, raw tables are explored next, and only then is the KPI Framework written.
 - **Data Dictionary is a client deliverable:** Not just internal documentation — it is the handoff artifact that lets the client's team understand and maintain their data independently.
 - **Modification track is the default for live clients:** Once a client is set up, almost all work flows through the modification track. Avoid re-running the full process unless the program structure has fundamentally changed.
-- **Requirement changes and bugs use different paths:** Requirement changes go through `/modify`; wrong numbers, duplicates, freshness issues, and dashboard discrepancies go through `/investigate`.
-- **No unconfirmed edits:** `/modify` asks before writing KPI Framework changes, and `/dbt_edit_plan` asks before editing dbt SQL, macros, source YAMLs, or dbt `.yml` files.
+- **Requirement changes and bugs use different paths:** Requirement changes go through `modify-requirements`; wrong numbers, duplicates, freshness issues, and dashboard discrepancies go through `investigate-issue`.
+- **No unconfirmed edits:** `modify-requirements` asks before writing KPI Framework changes, and `dbt-edit-plan` asks before editing dbt SQL, macros, source YAMLs, or dbt `.yml` files.
 - **Modification work is auditable:** Every change or investigation gets a durable folder with the request, plan, SQL run, results, and metadata.
-- **GitHub delivery is explicit:** When the dbt repo has a GitHub remote, `/dbt_edit_plan` and `/finalize` ask before committing, pushing, or opening a PR.
+- **GitHub delivery is explicit:** When the dbt repo has a GitHub remote, `dbt-edit-plan` and `finalize-dbt-project` ask before committing, pushing, or opening a PR.
 - **Layer-by-layer verification:** Models are run and validated at each layer boundary before the next layer is written.
 - **Finalization is mandatory:** After the Data Dictionary step, always run the single Finalization step before delivery.
 - **Documentation is part of delivery, not cleanup:** Use AI to write clear dbt YAML model and column documentation directly, then generate dbt docs from it.
 - **Lint the whole model set:** SQLFluff is run across all models for both new builds and modifications, and lint issues are fixed before the PR is opened.
 - **Delivery is PR-based:** Consulting changes ship through a dedicated branch and GitHub pull request to `main`, never by direct push to a shared branch.
-- **PII must not be exposed in artifacts:** `/explore_data` must respect consultant-marked PII columns, avoid raw-value inspection for them during analysis, may infer additional likely PII heuristically, and must not retain sample values for columns marked PII in the saved YAML.
+- **PII must not be exposed in artifacts:** `explore-data` must respect consultant-marked PII columns, avoid raw-value inspection for them during analysis, may infer additional likely PII heuristically, and must not retain sample values for columns marked PII in the saved YAML.
 - **NGO data quality is often poor:** Paper-to-digital conversion, inconsistent enumerators, mid-program schema changes. The staging layer must be defensive; document assumptions explicitly in `sources.yml` and dbt model `.yml` files.

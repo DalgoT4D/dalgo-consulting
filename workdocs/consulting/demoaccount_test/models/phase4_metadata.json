@@ -1,0 +1,77 @@
+{
+  "engagement": "demoaccount_test",
+  "engagement_display": "Demo Account Test",
+  "dbt_repo_path": "/Users/pratiksharao/code/dbt_demoaccount",
+  "test_setup": {
+    "project_profile": "dbt_demoaccount",
+    "profile_used": "health_demo",
+    "reason": "The dbt_project.yml profile name was not present in ~/.dbt/profiles.yml; the available health_demo profile was used for this test."
+  },
+  "staging": {
+    "status": "complete",
+    "models": [
+      "stg_orders",
+      "stg_stores"
+    ],
+    "last_run_invocation": "dbt build --project-dir /Users/pratiksharao/code/dbt_demoaccount --profiles-dir /Users/pratiksharao/.dbt --profile health_demo --select stg_orders stg_stores int_order_store_sales marts_store_sales_daily",
+    "notes": [
+      "Model SQL and YAML were generated.",
+      "dbt build completed successfully for the selected generated models.",
+      "Read-only validation found stg_orders row count = 63148."
+    ]
+  },
+  "intermediate": {
+    "status": "complete",
+    "models": [
+      "int_order_store_sales"
+    ],
+    "last_run_invocation": "dbt build --project-dir /Users/pratiksharao/code/dbt_demoaccount --profiles-dir /Users/pratiksharao/.dbt --profile health_demo --select stg_orders stg_stores int_order_store_sales marts_store_sales_daily",
+    "notes": [
+      "Model SQL and YAML were generated.",
+      "dbt build completed successfully for the selected generated models.",
+      "Read-only validation found int_order_store_sales row count = 63148 and unmatched store rows = 0."
+    ]
+  },
+  "marts": {
+    "status": "complete",
+    "models": [
+      "marts_store_sales_daily"
+    ],
+    "last_run_invocation": "dbt build --project-dir /Users/pratiksharao/code/dbt_demoaccount --profiles-dir /Users/pratiksharao/.dbt --profile health_demo --select stg_orders stg_stores int_order_store_sales marts_store_sales_daily",
+    "notes": [
+      "Model SQL and YAML were generated.",
+      "dbt build completed successfully for the selected generated models.",
+      "Read-only validation found marts_store_sales_daily row count = 538 and total gross_revenue = 66038193, matching source order_total."
+    ]
+  },
+  "data_dictionary_sheet": {
+    "status": "blocked",
+    "blocker": "Google Sheets create request returned 403: the service account does not have permission to create the Data Dictionary Sheet.",
+    "spreadsheet_id": "",
+    "url": ""
+  },
+  "data_dictionary": {
+    "status": "complete_local",
+    "local_markdown": "workdocs/consulting/demoaccount_test/models/data_dictionary.md",
+    "local_json": "workdocs/consulting/demoaccount_test/models/data_dictionary.json",
+    "notes": [
+      "Google Sheet creation was blocked by service-account permissions, so local Markdown and JSON artifacts were completed instead."
+    ]
+  },
+  "finalization": {
+    "status": "complete_for_generated_models",
+    "dbt_compile": "passed_generated_models",
+    "dbt_build": "passed_generated_models",
+    "sqlfluff": "passed_generated_files_full_repo_blocked",
+    "dbt_docs_generate": "passed",
+    "notes": [
+      "dbt debug passed with the health_demo profile.",
+      "dbt compile and dbt build passed for stg_orders, stg_stores, int_order_store_sales, and marts_store_sales_daily.",
+      "dbt docs generate completed and wrote target/catalog.json.",
+      "Focused SQLFluff lint passed for generated SQL files using postgres dialect.",
+      "Full SQLFluff lint is blocked by pre-existing failures in models/intermediate/order_stores_join.sql and models/production/him.sql.",
+      "No commits, pushes, or PRs were attempted per user instruction."
+    ]
+  },
+  "generated_at": "2026-07-23"
+}

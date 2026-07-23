@@ -1,0 +1,27 @@
+{
+  "engagement": "demoaccount_test",
+  "engagement_display": "Demo Account Test",
+  "track": "new",
+  "dbt_repo_path": "/Users/pratiksharao/code/dbt_demoaccount",
+  "source_yaml_files": [
+    "/Users/pratiksharao/code/dbt_demoaccount/models/sources/sources.yml"
+  ],
+  "test_setup": {
+    "project_profile": "dbt_demoaccount",
+    "profile_used": "health_demo",
+    "reason": "The dbt_project.yml profile name was not present in ~/.dbt/profiles.yml; the available health_demo profile was used for this test."
+  },
+  "kpi_framework_sheet": {
+    "status": "blocked",
+    "blocker": "Google Sheets create request returned 403: the service account does not have permission to create the KPI Framework Sheet.",
+    "spreadsheet_id": "",
+    "url": ""
+  },
+  "local_artifacts": {
+    "kpi_framework_markdown": "workdocs/consulting/demoaccount_test/framework/kpi_framework.md",
+    "kpi_framework_json": "workdocs/consulting/demoaccount_test/framework/kpi_framework.json",
+    "dbt_plan": "workdocs/consulting/demoaccount_test/framework/dbt_plan.md",
+    "er_diagram": "workdocs/consulting/demoaccount_test/framework/er_diagram.md"
+  },
+  "generated_at": "2026-07-23"
+}
